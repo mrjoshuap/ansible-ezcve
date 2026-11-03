@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1-dev
+
+- Release development version for 1.0.1.
+
 ## 1.0.0
 
 - Role `cve_2026_98432_check` audits RHEL-family, Fedora, Debian, and Ubuntu
