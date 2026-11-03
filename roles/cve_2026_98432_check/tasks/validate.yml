@@ -1,0 +1,34 @@
+---
+- name: Role cve_2026_98432_check | Assert switches are true or false
+  ansible.builtin.assert:
+    that:
+      - cve_2026_98432_check_apply_mitigation | string | lower in ['true', 'false', 'yes', 'no', '1', '0']
+      - cve_2026_98432_check_disable_tcp_migrate_req | string | lower in ['true', 'false', 'yes', 'no', '1', '0']
+      - cve_2026_98432_check_drop_ipv4_options | string | lower in ['true', 'false', 'yes', 'no', '1', '0']
+      - cve_2026_98432_check_report_csv | string | lower in ['true', 'false', 'yes', 'no', '1', '0']
+    fail_msg: >-
+      cve_2026_98432_check_apply_mitigation, disable_tcp_migrate_req,
+      drop_ipv4_options, and report_csv must be true or false.
+
+- name: Role cve_2026_98432_check | Assert the firewall backend is supported
+  ansible.builtin.assert:
+    that:
+      - cve_2026_98432_check_firewall_backend in ['auto', 'nftables', 'iptables', 'none']
+    fail_msg: >-
+      cve_2026_98432_check_firewall_backend must be auto, nftables, iptables, or none.
+
+- name: Role cve_2026_98432_check | Assert version data has the expected shape
+  ansible.builtin.assert:
+    that:
+      - cve_2026_98432_check_fixed_kernels is mapping
+      - cve_2026_98432_check_fixed_kernels_rt is mapping
+      - cve_2026_98432_check_unfixed_releases is mapping
+      - cve_2026_98432_check_upstream_fixed is sequence
+      - cve_2026_98432_check_upstream_fixed is not string
+      - cve_2026_98432_check_changelog_pattern is string
+      - cve_2026_98432_check_changelog_pattern | length > 0
+      - cve_2026_98432_check_report_dir is string
+    fail_msg: >-
+      fixed_kernels, fixed_kernels_rt, and unfixed_releases must be mappings.
+      upstream_fixed must be a list. changelog_pattern must be a non-empty string.
+      report_dir must be a string.

@@ -1,0 +1,196 @@
+---
+- name: Role cve_2026_98432_check | Gather distribution and kernel facts
+  ansible.builtin.setup:
+    gather_subset:
+      - "!all"
+      - "!min"
+      - distribution
+      - kernel
+  when: ansible_facts['kernel'] is not defined or ansible_facts['distribution'] is not defined
+
+- name: Role cve_2026_98432_check | Normalize the operating system id
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_os_id: "{{ ansible_facts['distribution'] | mrjoshuap.ezcve.os_id(ansible_facts['os_family'] | default('')) }}"
+    __cve_2026_98432_check_os_version: "{{ ansible_facts['distribution_version'] | default('') }}"
+    __cve_2026_98432_check_kernel: "{{ ansible_facts['kernel'] }}"
+    __cve_2026_98432_check_distribution: "{{ ansible_facts['distribution'] | default('') }}"
+
+- name: Role cve_2026_98432_check | Read net.mptcp.enabled
+  ansible.builtin.slurp:
+    src: /proc/sys/net/mptcp/enabled
+  register: __cve_2026_98432_check_mptcp_slurp
+  failed_when: false
+  changed_when: false
+
+- name: Role cve_2026_98432_check | Read net.ipv4.tcp_migrate_req
+  ansible.builtin.slurp:
+    src: /proc/sys/net/ipv4/tcp_migrate_req
+  register: __cve_2026_98432_check_migrate_slurp
+  failed_when: false
+  changed_when: false
+
+- name: Role cve_2026_98432_check | Record sysctl values
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_mptcp_enabled: "{{ __cve_2026_98432_check_mptcp_slurp | mrjoshuap.ezcve.proc_value }}"
+    __cve_2026_98432_check_tcp_migrate_req: "{{ __cve_2026_98432_check_migrate_slurp | mrjoshuap.ezcve.proc_value }}"
+
+# ss has no Ansible module. -p needs privileges for process names and is read-only.
+- name: Role cve_2026_98432_check | List MPTCP listeners
+  block:
+    - name: Role cve_2026_98432_check | List MPTCP listeners with process names
+      ansible.builtin.command:
+        argv:
+          - ss
+          - -Mlnp
+      register: __cve_2026_98432_check_ss
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      become: true
+  rescue:
+    - name: Role cve_2026_98432_check | List MPTCP listeners without process names
+      ansible.builtin.command:
+        argv:
+          - ss
+          - -Mln
+      register: __cve_2026_98432_check_ss
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+- name: Role cve_2026_98432_check | Record MPTCP listeners
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_ss_parsed: "{{ __cve_2026_98432_check_ss | mrjoshuap.ezcve.ss_mptcp }}"
+
+- name: Role cve_2026_98432_check | Store MPTCP listener facts
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_listeners: "{{ __cve_2026_98432_check_ss_parsed['listeners'] }}"
+    __cve_2026_98432_check_ss_supported: "{{ __cve_2026_98432_check_ss_parsed['supported'] | bool }}"
+    __cve_2026_98432_check_ss_error: "{{ __cve_2026_98432_check_ss_parsed['error'] }}"
+
+- name: Role cve_2026_98432_check | Collect installed package versions
+  ansible.builtin.package_facts:
+    manager: auto
+  failed_when: false
+  when: __cve_2026_98432_check_os_id in ['redhat', 'fedora', 'debian', 'ubuntu']
+
+- name: Role cve_2026_98432_check | Record installed kernel package versions
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_pkg_version: >-
+      {{
+        ansible_facts['packages'] | default({})
+        | mrjoshuap.ezcve.deb_package_version(__cve_2026_98432_check_kernel)
+      }}
+    __cve_2026_98432_check_installed_versions: >-
+      {{
+        ansible_facts['packages'] | default({})
+        | mrjoshuap.ezcve.installed_nvrs(['kernel-core', 'kernel', 'kernel-rt'])
+      }}
+    __cve_2026_98432_check_installed_deb_versions: >-
+      {{
+        ansible_facts['packages'] | default({})
+        | mrjoshuap.ezcve.deb_installed_versions
+      }}
+  when: __cve_2026_98432_check_os_id in ['redhat', 'fedora', 'debian', 'ubuntu']
+
+# No module prints an RPM changelog. The query is read-only.
+- name: Role cve_2026_98432_check | Read the kernel-core RPM changelog  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -q
+      - --changelog
+      - "kernel-core-{{ __cve_2026_98432_check_kernel }}"
+  register: __cve_2026_98432_check_core_changelog
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: __cve_2026_98432_check_os_id in ['redhat', 'fedora']
+
+- name: Role cve_2026_98432_check | Read the kernel RPM changelog  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    argv:
+      - rpm
+      - -q
+      - --changelog
+      - "kernel-{{ __cve_2026_98432_check_kernel }}"
+  register: __cve_2026_98432_check_kernel_changelog
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when:
+    - __cve_2026_98432_check_os_id in ['redhat', 'fedora']
+    - (__cve_2026_98432_check_core_changelog | default({}))['rc'] | default(1) != 0
+
+- name: Role cve_2026_98432_check | Record the RPM changelog result
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_rpm_changelog: >-
+      {{
+        __cve_2026_98432_check_core_changelog | default({})
+        | mrjoshuap.ezcve.rpm_changelog(
+          __cve_2026_98432_check_kernel_changelog | default({}),
+          cve_2026_98432_check_changelog_pattern
+        )
+      }}
+  when: __cve_2026_98432_check_os_id in ['redhat', 'fedora']
+
+- name: Role cve_2026_98432_check | Set Debian changelog paths
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_changelog_paths:
+      - "/usr/share/doc/linux-modules-{{ __cve_2026_98432_check_kernel }}/changelog.Debian.gz"
+      - "/usr/share/doc/linux-image-{{ __cve_2026_98432_check_kernel }}/changelog.Debian.gz"
+  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
+
+- name: Role cve_2026_98432_check | Stat Debian kernel changelogs
+  ansible.builtin.stat:
+    path: "{{ __cve_2026_98432_check_path }}"
+  loop: "{{ __cve_2026_98432_check_changelog_paths }}"
+  loop_control:
+    loop_var: __cve_2026_98432_check_path
+    label: "{{ __cve_2026_98432_check_path }}"
+  register: __cve_2026_98432_check_changelog_stats
+  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
+
+# zgrep is the read-only way to search a gzipped Debian changelog.
+- name: Role cve_2026_98432_check | Search Debian changelogs for the fix
+  ansible.builtin.command:
+    argv:
+      - zgrep
+      - -cE
+      - "{{ cve_2026_98432_check_changelog_pattern }}"
+      - "{{ __cve_2026_98432_check_stat['__cve_2026_98432_check_path'] }}"
+  loop: "{{ __cve_2026_98432_check_changelog_stats['results'] | default([]) }}"
+  loop_control:
+    loop_var: __cve_2026_98432_check_stat
+    label: "{{ __cve_2026_98432_check_stat['__cve_2026_98432_check_path'] | default('changelog') }}"
+  register: __cve_2026_98432_check_zgrep
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when:
+    - __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
+    - __cve_2026_98432_check_stat['stat'] is defined
+    - __cve_2026_98432_check_stat['stat']['exists'] | bool
+
+- name: Role cve_2026_98432_check | Record the Debian changelog result
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_deb_changelog: "{{ __cve_2026_98432_check_zgrep['results'] | default([]) | mrjoshuap.ezcve.zgrep_summary }}"
+  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
+
+- name: Role cve_2026_98432_check | Record changelog evidence
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_changelog_hit: >-
+      {{
+        (__cve_2026_98432_check_rpm_changelog | default({}))['hit'] | default(false)
+        or (__cve_2026_98432_check_deb_changelog | default({}))['hit'] | default(false)
+      }}
+    __cve_2026_98432_check_changelog_checked: >-
+      {{
+        (__cve_2026_98432_check_rpm_changelog | default({}))['checked'] | default(false)
+        or (__cve_2026_98432_check_deb_changelog | default({}))['checked'] | default(false)
+      }}
+    __cve_2026_98432_check_changelog_source: >-
+      {{
+        ((__cve_2026_98432_check_rpm_changelog | default({}))['source'] | default(''))
+        or ((__cve_2026_98432_check_deb_changelog | default({}))['source'] | default(''))
+      }}

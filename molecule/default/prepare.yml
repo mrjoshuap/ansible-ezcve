@@ -1,0 +1,18 @@
+---
+- name: Link this checkout as mrjoshuap.ezcve
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Create the local collection path
+      ansible.builtin.file:
+        path: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/.ansible/collections/ansible_collections/mrjoshuap"
+        state: directory
+        mode: "0755"
+
+    - name: Link the checkout
+      ansible.builtin.file:
+        src: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+        dest: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/.ansible/collections/ansible_collections/mrjoshuap/ezcve"
+        state: link
+        force: true

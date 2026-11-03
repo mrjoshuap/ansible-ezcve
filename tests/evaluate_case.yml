@@ -1,0 +1,39 @@
+---
+- name: Role cve_2026_98432_check | Evaluate one fixture
+  ansible.builtin.include_role:
+    name: cve_2026_98432_check
+    tasks_from: evaluate
+  vars:
+    __cve_2026_98432_check_os_id: "{{ __cve_2026_98432_check_case.os_id }}"
+    __cve_2026_98432_check_os_version: "{{ __cve_2026_98432_check_case.os_version }}"
+    __cve_2026_98432_check_kernel: "{{ __cve_2026_98432_check_case.kernel }}"
+    __cve_2026_98432_check_distribution: "{{ __cve_2026_98432_check_case.distribution | default('') }}"
+    __cve_2026_98432_check_changelog_hit: "{{ __cve_2026_98432_check_case.changelog_hit | default(false) }}"
+    __cve_2026_98432_check_changelog_checked: "{{ __cve_2026_98432_check_case.changelog_checked | default(false) }}"
+    __cve_2026_98432_check_changelog_source: "{{ __cve_2026_98432_check_case.changelog_source | default('') }}"
+    __cve_2026_98432_check_pkg_version: "{{ __cve_2026_98432_check_case.pkg_version | default('') }}"
+    __cve_2026_98432_check_listeners: "{{ __cve_2026_98432_check_case.listeners | default([]) }}"
+    __cve_2026_98432_check_mptcp_enabled: "{{ __cve_2026_98432_check_case.mptcp_enabled | default('missing') }}"
+    __cve_2026_98432_check_tcp_migrate_req: "{{ __cve_2026_98432_check_case.tcp_migrate_req | default('missing') }}"
+    __cve_2026_98432_check_ss_supported: "{{ __cve_2026_98432_check_case.ss_supported | default(true) }}"
+    __cve_2026_98432_check_ss_error: "{{ __cve_2026_98432_check_case.ss_error | default('') }}"
+    __cve_2026_98432_check_installed_versions: "{{ __cve_2026_98432_check_case.installed_versions | default([]) }}"
+    __cve_2026_98432_check_installed_deb_versions: "{{ __cve_2026_98432_check_case.installed_deb_versions | default([]) }}"
+
+- name: Role cve_2026_98432_check | Assert the fixture result
+  ansible.builtin.assert:
+    that:
+      - cve_2026_98432_check_risk == __cve_2026_98432_check_case.risk
+      - cve_2026_98432_check_kernel_status == __cve_2026_98432_check_case.status
+      - cve_2026_98432_check_summary['detection_method'] == __cve_2026_98432_check_case.method
+      - (cve_2026_98432_check_summary['reboot_required'] | bool) == (__cve_2026_98432_check_case.reboot | default(false) | bool)
+      - __cve_2026_98432_check_case.status != 'unknown' or cve_2026_98432_check_summary['kernel_fixed'] is none
+      - __cve_2026_98432_check_case.status != 'vulnerable' or cve_2026_98432_check_summary['kernel_fixed'] is false
+      - __cve_2026_98432_check_case.status not in ['fixed', 'not_affected'] or cve_2026_98432_check_summary['kernel_fixed'] is true
+    fail_msg: >-
+      {{ __cve_2026_98432_check_case.name }} expected
+      {{ __cve_2026_98432_check_case.status }}/{{ __cve_2026_98432_check_case.risk }}
+      via {{ __cve_2026_98432_check_case.method }} but got
+      {{ cve_2026_98432_check_kernel_status }}/{{ cve_2026_98432_check_risk }}
+      via {{ cve_2026_98432_check_summary['detection_method'] }}:
+      {{ cve_2026_98432_check_summary['detection_detail'] }}

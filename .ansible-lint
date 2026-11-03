@@ -1,0 +1,22 @@
+---
+profile: production
+
+exclude_paths:
+  - .github/
+  - molecule/
+
+use_default_rules: true
+
+skip_list:
+  - yaml[colons]
+  - yaml[line-length]
+
+task_name_prefix: "Role cve_2026_98432_check | "
+
+loop_var_prefix: "^(__|{role}_)"
+
+var_naming_pattern: "^[a-z_][a-z0-9_]*$"
+
+warn_list:
+  - experimental
+  - risky-file-permissions

@@ -1,0 +1,243 @@
+---
+- name: Role cve_2026_98432_check | Fill missing evaluation inputs
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_os_id: "{{ __cve_2026_98432_check_os_id | default('unsupported') }}"
+    __cve_2026_98432_check_os_version: "{{ __cve_2026_98432_check_os_version | default('') }}"
+    __cve_2026_98432_check_kernel: "{{ __cve_2026_98432_check_kernel | default(ansible_facts['kernel'] | default('')) }}"
+    __cve_2026_98432_check_distribution: "{{ __cve_2026_98432_check_distribution | default('') }}"
+    __cve_2026_98432_check_changelog_hit: "{{ __cve_2026_98432_check_changelog_hit | default(false) | bool }}"
+    __cve_2026_98432_check_changelog_checked: "{{ __cve_2026_98432_check_changelog_checked | default(false) | bool }}"
+    __cve_2026_98432_check_changelog_source: "{{ __cve_2026_98432_check_changelog_source | default('') }}"
+    __cve_2026_98432_check_pkg_version: "{{ __cve_2026_98432_check_pkg_version | default('') }}"
+    __cve_2026_98432_check_listeners: "{{ __cve_2026_98432_check_listeners | default([]) }}"
+    __cve_2026_98432_check_mptcp_enabled: "{{ __cve_2026_98432_check_mptcp_enabled | default('missing') }}"
+    __cve_2026_98432_check_tcp_migrate_req: "{{ __cve_2026_98432_check_tcp_migrate_req | default('missing') }}"
+    __cve_2026_98432_check_ss_supported: "{{ __cve_2026_98432_check_ss_supported | default(false) | bool }}"
+    __cve_2026_98432_check_ss_error: "{{ __cve_2026_98432_check_ss_error | default('') }}"
+    __cve_2026_98432_check_installed_versions: "{{ __cve_2026_98432_check_installed_versions | default([]) }}"
+    __cve_2026_98432_check_installed_deb_versions: "{{ __cve_2026_98432_check_installed_deb_versions | default([]) }}"
+    __cve_2026_98432_check_decided: false
+    __cve_2026_98432_check_kernel_status: unknown
+    __cve_2026_98432_check_detection_method: none
+    __cve_2026_98432_check_detection_detail: >-
+      No changelog match and no version rule matched this kernel.
+    __cve_2026_98432_check_minimum: ""
+    __cve_2026_98432_check_version_kind: ""
+    __cve_2026_98432_check_version_prefix: ""
+    __cve_2026_98432_check_running_version: ""
+    __cve_2026_98432_check_reboot_required: false
+
+- name: Role cve_2026_98432_check | Parse the upstream kernel version
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_upstream: "{{ __cve_2026_98432_check_kernel | mrjoshuap.ezcve.upstream_status(cve_2026_98432_check_upstream_fixed) }}"
+
+- name: Role cve_2026_98432_check | Mark the kernel fixed when the changelog names the CVE
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_kernel_status: fixed
+    __cve_2026_98432_check_detection_method: changelog
+    __cve_2026_98432_check_detection_detail: >-
+      {{ __cve_2026_98432_check_changelog_source | default('changelog') }}
+      contains CVE-2026-98432 or the fix commit message.
+    __cve_2026_98432_check_decided: true
+  when: __cve_2026_98432_check_changelog_hit | bool
+
+- name: Role cve_2026_98432_check | Record kernels older than 4.4 as not affected
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_kernel_status: not_affected
+    __cve_2026_98432_check_detection_method: upstream
+    __cve_2026_98432_check_detection_detail: "{{ __cve_2026_98432_check_upstream['detail'] }}"
+    __cve_2026_98432_check_decided: true
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_upstream['state'] == 'not_affected'
+
+- name: Role cve_2026_98432_check | Select the EL minimum fixed kernel
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_el_minimum: >-
+      {{
+        __cve_2026_98432_check_kernel
+        | mrjoshuap.ezcve.el_minimum(
+          __cve_2026_98432_check_os_version,
+          cve_2026_98432_check_fixed_kernels['redhat'],
+          cve_2026_98432_check_fixed_kernels_rt['redhat']
+        )
+      }}
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id == 'redhat'
+
+- name: Role cve_2026_98432_check | Compare the running EL kernel to the minimum
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_kernel_status: >-
+      {{
+        'fixed'
+        if (
+          __cve_2026_98432_check_kernel
+          | mrjoshuap.ezcve.rpm_ge(__cve_2026_98432_check_el_minimum)
+        )
+        else 'vulnerable'
+      }}
+    __cve_2026_98432_check_detection_method: version
+    __cve_2026_98432_check_detection_detail: >-
+      {{ __cve_2026_98432_check_kernel }} compared with RPM version order to
+      {{ __cve_2026_98432_check_el_minimum }}.
+    __cve_2026_98432_check_minimum: "{{ __cve_2026_98432_check_el_minimum }}"
+    __cve_2026_98432_check_version_kind: rpm
+    __cve_2026_98432_check_running_version: "{{ __cve_2026_98432_check_kernel }}"
+    __cve_2026_98432_check_decided: true
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id == 'redhat'
+    - __cve_2026_98432_check_el_minimum | default('') | length > 0
+
+- name: Role cve_2026_98432_check | Select the Debian or Ubuntu fixed package
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_deb_rule: >-
+      {{
+        __cve_2026_98432_check_pkg_version
+        | mrjoshuap.ezcve.deb_rule(
+          __cve_2026_98432_check_kernel,
+          __cve_2026_98432_check_os_version,
+          cve_2026_98432_check_fixed_kernels[__cve_2026_98432_check_os_id]
+        )
+      }}
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
+
+- name: Role cve_2026_98432_check | Compare the Debian or Ubuntu package to the minimum
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_kernel_status: >-
+      {{
+        'fixed'
+        if (
+          __cve_2026_98432_check_pkg_version
+          | mrjoshuap.ezcve.deb_ge(__cve_2026_98432_check_deb_rule['minimum'])
+        )
+        else 'vulnerable'
+      }}
+    __cve_2026_98432_check_detection_method: version
+    __cve_2026_98432_check_detection_detail: >-
+      {{
+        'Package ' ~ __cve_2026_98432_check_pkg_version
+        ~ ' compared with dpkg version order to '
+        ~ __cve_2026_98432_check_deb_rule['minimum']
+        ~ (
+          '. That minimum was in the ' ~ __cve_2026_98432_check_deb_rule['pocket']
+          ~ ' pocket when these defaults were written.'
+          if __cve_2026_98432_check_deb_rule['pocket'] | default('') | length > 0
+          else '.'
+        )
+      }}
+    __cve_2026_98432_check_minimum: "{{ __cve_2026_98432_check_deb_rule['minimum'] }}"
+    __cve_2026_98432_check_version_kind: deb
+    __cve_2026_98432_check_version_prefix: "{{ __cve_2026_98432_check_deb_rule['prefix'] | default('') }}"
+    __cve_2026_98432_check_running_version: "{{ __cve_2026_98432_check_pkg_version }}"
+    __cve_2026_98432_check_installed_versions: "{{ __cve_2026_98432_check_installed_deb_versions }}"
+    __cve_2026_98432_check_decided: true
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
+    - __cve_2026_98432_check_deb_rule | default({}) | length > 0
+
+- name: Role cve_2026_98432_check | Compare Fedora and non-EL kernels to upstream
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_kernel_status: "{{ __cve_2026_98432_check_upstream['state'] }}"
+    __cve_2026_98432_check_detection_method: upstream
+    __cve_2026_98432_check_detection_detail: "{{ __cve_2026_98432_check_upstream['detail'] }}"
+    __cve_2026_98432_check_decided: true
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id == 'fedora' or (__cve_2026_98432_check_os_id == 'redhat' and '.el' not in __cve_2026_98432_check_kernel)
+    - __cve_2026_98432_check_upstream['state'] in ['fixed', 'vulnerable', 'not_affected']
+
+- name: Role cve_2026_98432_check | Mark releases that have no published fix
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_kernel_status: vulnerable
+    __cve_2026_98432_check_detection_method: version
+    __cve_2026_98432_check_detection_detail: >-
+      {{ __cve_2026_98432_check_os_id }} {{ __cve_2026_98432_check_os_version }}
+      has no published fix in the version data.
+    __cve_2026_98432_check_decided: true
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id | mrjoshuap.ezcve.release_unfixed(__cve_2026_98432_check_os_version, cve_2026_98432_check_unfixed_releases)
+
+- name: Role cve_2026_98432_check | Record an unknown kernel status
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_kernel_status: unknown
+    __cve_2026_98432_check_detection_method: none
+    __cve_2026_98432_check_detection_detail: >-
+      No changelog match and no version rule for
+      {{ __cve_2026_98432_check_os_id }} {{ __cve_2026_98432_check_os_version }}
+      kernel {{ __cve_2026_98432_check_kernel }}.
+      Changelog searched: {{ __cve_2026_98432_check_changelog_checked | bool }}.
+  when: not __cve_2026_98432_check_decided | bool
+
+- name: Role cve_2026_98432_check | Classify risk as unknown
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_risk: unknown
+  when: __cve_2026_98432_check_kernel_status == 'unknown'
+
+- name: Role cve_2026_98432_check | Classify risk as low for a fixed kernel
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_risk: low
+  when: __cve_2026_98432_check_kernel_status in ['fixed', 'not_affected']
+
+- name: Role cve_2026_98432_check | Classify risk as high when listeners exist
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_risk: high
+  when:
+    - __cve_2026_98432_check_kernel_status == 'vulnerable'
+    - __cve_2026_98432_check_listeners | length > 0
+
+- name: Role cve_2026_98432_check | Classify risk as medium without listeners
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_risk: medium
+  when:
+    - __cve_2026_98432_check_kernel_status == 'vulnerable'
+    - __cve_2026_98432_check_listeners | length == 0
+
+- name: Role cve_2026_98432_check | Detect a fixed package that is not running
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_reboot_required: >-
+      {{
+        __cve_2026_98432_check_installed_versions
+        | mrjoshuap.ezcve.reboot_required(
+          __cve_2026_98432_check_running_version,
+          __cve_2026_98432_check_minimum,
+          __cve_2026_98432_check_version_kind,
+          __cve_2026_98432_check_version_prefix
+        )
+      }}
+  when:
+    - __cve_2026_98432_check_kernel_status == 'vulnerable'
+    - __cve_2026_98432_check_minimum | length > 0
+
+- name: Role cve_2026_98432_check | Assemble summary fields
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_summary_fields:
+      cve: CVE-2026-98432
+      host: "{{ inventory_hostname }}"
+      os_id: "{{ __cve_2026_98432_check_os_id }}"
+      os_version: "{{ __cve_2026_98432_check_os_version }}"
+      distribution: "{{ __cve_2026_98432_check_distribution }}"
+      kernel: "{{ __cve_2026_98432_check_kernel }}"
+      kernel_status: "{{ __cve_2026_98432_check_kernel_status }}"
+      risk: "{{ __cve_2026_98432_check_risk }}"
+      detection_method: "{{ __cve_2026_98432_check_detection_method }}"
+      detection_detail: "{{ __cve_2026_98432_check_detection_detail }}"
+      mptcp_enabled: "{{ __cve_2026_98432_check_mptcp_enabled }}"
+      tcp_migrate_req: "{{ __cve_2026_98432_check_tcp_migrate_req }}"
+      mptcp_ss_supported: "{{ __cve_2026_98432_check_ss_supported | bool }}"
+      mptcp_listeners: "{{ __cve_2026_98432_check_listeners }}"
+      mptcp_listener_count: "{{ __cve_2026_98432_check_listeners | length }}"
+      mptcp_enabled_without_listeners: "{{ __cve_2026_98432_check_mptcp_enabled == '1' and __cve_2026_98432_check_listeners | length == 0 }}"
+      reboot_required: "{{ __cve_2026_98432_check_reboot_required | default(false) | bool }}"
+      ss_error: "{{ __cve_2026_98432_check_ss_error }}"
+
+- name: Role cve_2026_98432_check | Publish the host summary
+  ansible.builtin.set_fact:
+    cve_2026_98432_check_kernel_status: "{{ __cve_2026_98432_check_kernel_status }}"
+    cve_2026_98432_check_risk: "{{ __cve_2026_98432_check_risk }}"
+    cve_2026_98432_check_summary: "{{ __cve_2026_98432_check_summary_fields | mrjoshuap.ezcve.build_summary }}"

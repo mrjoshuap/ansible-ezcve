@@ -1,0 +1,7 @@
+---
+- name: Audit hosts for CVE-2026-98432
+  hosts: all
+  gather_facts: true
+  become: true
+  roles:
+    - role: mrjoshuap.ezcve.cve_2026_98432_check

@@ -1,0 +1,34 @@
+---
+dependency:
+  enabled: false
+driver:
+  name: default
+scenario:
+  test_sequence:
+    - dependency
+    - syntax
+    - prepare
+    - converge
+    - idempotence
+platforms:
+  - name: instance
+provisioner:
+  name: ansible
+  inventory:
+    hosts:
+      all:
+        hosts:
+          instance:
+            ansible_connection: local
+  env:
+    ANSIBLE_COLLECTIONS_PATH: >-
+      ${MOLECULE_PROJECT_DIRECTORY}/.ansible/collections:${ANSIBLE_COLLECTIONS_PATH}:/usr/share/ansible/collections
+  config_options:
+    defaults:
+      roles_path: ${MOLECULE_PROJECT_DIRECTORY}/roles
+      interpreter_python: auto_silent
+  playbooks:
+    prepare: prepare.yml
+    converge: converge.yml
+verifier:
+  name: ansible

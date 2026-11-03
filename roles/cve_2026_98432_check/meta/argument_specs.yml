@@ -1,0 +1,75 @@
+---
+argument_specs:
+  main:
+    short_description: Audit a host for CVE-2026-98432.
+    description:
+      - Collect running-kernel, MPTCP, and fix facts.
+      - Do not change the host unless cve_2026_98432_check_apply_mitigation is true.
+    options:
+      cve_2026_98432_check_apply_mitigation:
+        type: bool
+        required: false
+        default: false
+        description:
+          - Persist net.mptcp.enabled=0 when true.
+      cve_2026_98432_check_disable_tcp_migrate_req:
+        type: bool
+        required: false
+        default: true
+        description:
+          - With mitigation, also set net.ipv4.tcp_migrate_req=0 when that key exists.
+      cve_2026_98432_check_drop_ipv4_options:
+        type: bool
+        required: false
+        default: false
+        description:
+          - With mitigation, drop IPv4 TCP packets that carry IP options.
+      cve_2026_98432_check_firewall_backend:
+        type: str
+        required: false
+        default: auto
+        choices:
+          - auto
+          - nftables
+          - iptables
+          - none
+        description:
+          - Packet-filter backend used when drop_ipv4_options is true.
+      cve_2026_98432_check_report_dir:
+        type: str
+        required: false
+        default: ""
+        description:
+          - Controller directory for per-host JSON reports. Empty skips files.
+      cve_2026_98432_check_report_csv:
+        type: bool
+        required: false
+        default: false
+        description:
+          - Also write a one-row CSV next to the JSON report.
+      cve_2026_98432_check_changelog_pattern:
+        type: str
+        required: false
+        description:
+          - Regular expression searched in the running kernel changelog.
+      cve_2026_98432_check_upstream_fixed:
+        type: list
+        required: false
+        elements: str
+        description:
+          - Upstream stable versions that contain the fix.
+      cve_2026_98432_check_fixed_kernels:
+        type: dict
+        required: false
+        description:
+          - Distro minimum fixed versions. Replacing this drops keys you omit.
+      cve_2026_98432_check_fixed_kernels_rt:
+        type: dict
+        required: false
+        description:
+          - Real-time kernel minimums, keyed like fixed_kernels.redhat.
+      cve_2026_98432_check_unfixed_releases:
+        type: dict
+        required: false
+        description:
+          - Distro releases that have no published fix.

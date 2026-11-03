@@ -1,0 +1,38 @@
+---
+name: lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.ansible/collections:/usr/share/ansible/collections
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test tools
+        run: |
+          pip install \
+            'ansible-core==2.16.19' \
+            'ansible-lint==26.4.0' \
+            yamllint
+          ansible-galaxy collection install -r requirements.yml
+      - name: Link this checkout as mrjoshuap.ezcve
+        run: bash scripts/link-collection.sh
+      - name: Release version rules
+        run: python3 scripts/release_version.py --self-test
+      - name: Unit tests
+        run: python3 tests/test_kernel_versions.py
+      - name: Version decisions
+        run: ansible-playbook tests/version_logic.yml
+      - name: Syntax check
+        run: ansible-playbook --syntax-check playbooks/cve_2026_98432_check.yml
+      - name: ansible-lint
+        run: ansible-lint
+      - name: yamllint
+        run: yamllint -c .yamllint.yml .

@@ -1,0 +1,7 @@
+{{ ansible_managed | default("Ansible managed") | comment }}
+table ip cve_2026_98432 {
+    chain pre {
+        type filter hook prerouting priority -300; policy accept;
+        meta l4proto tcp ip hdrlength gt 5 counter drop
+    }
+}

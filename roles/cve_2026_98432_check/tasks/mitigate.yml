@@ -1,0 +1,187 @@
+---
+- name: Role cve_2026_98432_check | Apply requested mitigations
+  become: true
+  when: cve_2026_98432_check_apply_mitigation | bool
+  block:
+    - name: Role cve_2026_98432_check | Read net.mptcp.enabled before mitigation
+      ansible.builtin.slurp:
+        src: /proc/sys/net/mptcp/enabled
+      register: __cve_2026_98432_check_mitigation_mptcp
+      failed_when: false
+      changed_when: false
+
+    - name: Role cve_2026_98432_check | Read tcp_migrate_req before mitigation
+      ansible.builtin.slurp:
+        src: /proc/sys/net/ipv4/tcp_migrate_req
+      register: __cve_2026_98432_check_mitigation_migrate
+      failed_when: false
+      changed_when: false
+
+    - name: Role cve_2026_98432_check | Disable MPTCP persistently
+      ansible.posix.sysctl:
+        name: net.mptcp.enabled
+        value: "0"
+        sysctl_file: /etc/sysctl.d/90-cve-2026-98432.conf
+        sysctl_set: true
+        state: present
+        reload: true
+      when: (__cve_2026_98432_check_mitigation_mptcp | mrjoshuap.ezcve.proc_value) != 'missing'
+
+    - name: Role cve_2026_98432_check | Disable TCP request migration persistently
+      ansible.posix.sysctl:
+        name: net.ipv4.tcp_migrate_req
+        value: "0"
+        sysctl_file: /etc/sysctl.d/90-cve-2026-98432.conf
+        sysctl_set: true
+        state: present
+        reload: true
+      when:
+        - cve_2026_98432_check_disable_tcp_migrate_req | bool
+        - (__cve_2026_98432_check_mitigation_migrate | mrjoshuap.ezcve.proc_value) != 'missing'
+
+    - name: Role cve_2026_98432_check | Stat firewall commands
+      ansible.builtin.stat:
+        path: "{{ __cve_2026_98432_check_bin }}"
+      loop:
+        - /usr/sbin/nft
+        - /usr/bin/nft
+        - /sbin/nft
+        - /usr/sbin/iptables
+        - /usr/bin/iptables
+        - /sbin/iptables
+      loop_control:
+        loop_var: __cve_2026_98432_check_bin
+        label: "{{ __cve_2026_98432_check_bin }}"
+      register: __cve_2026_98432_check_firewall_bins
+      when: cve_2026_98432_check_drop_ipv4_options | bool
+
+    - name: Role cve_2026_98432_check | Select a packet filter backend
+      ansible.builtin.set_fact:
+        __cve_2026_98432_check_firewall: >-
+          {{
+            cve_2026_98432_check_firewall_backend
+            | mrjoshuap.ezcve.firewall_choice(
+              __cve_2026_98432_check_firewall_bins['results'] | default([])
+            )
+          }}
+      when: cve_2026_98432_check_drop_ipv4_options | bool
+
+    - name: Role cve_2026_98432_check | Warn when no packet filter backend is available
+      ansible.builtin.debug:
+        msg: >-
+          CVE-2026-98432 IP-option drop was requested but no nft or iptables
+          command was found. MPTCP sysctl mitigation still ran when that key exists.
+      when:
+        - cve_2026_98432_check_drop_ipv4_options | bool
+        - __cve_2026_98432_check_firewall['backend'] | default('none') == 'none'
+
+    - name: Role cve_2026_98432_check | Create the nftables drop-in directory
+      ansible.builtin.file:
+        path: /etc/nftables.d
+        state: directory
+        mode: "0755"
+      when: __cve_2026_98432_check_firewall['backend'] | default('none') == 'nftables'
+
+    - name: Role cve_2026_98432_check | Install the nftables drop rules
+      ansible.builtin.template:
+        src: nftables-cve_2026_98432.nft.j2
+        dest: /etc/nftables.d/cve_2026_98432.nft
+        mode: "0644"
+      when: __cve_2026_98432_check_firewall['backend'] | default('none') == 'nftables'
+
+    # Read-only probe so check mode can see whether the table already exists.
+    - name: Role cve_2026_98432_check | Check for the CVE nftables table
+      ansible.builtin.command:
+        argv:
+          - "{{ __cve_2026_98432_check_firewall['command'] }}"
+          - list
+          - table
+          - ip
+          - cve_2026_98432
+      register: __cve_2026_98432_check_nft_list
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      when: __cve_2026_98432_check_firewall['backend'] | default('none') == 'nftables'
+
+    - name: Role cve_2026_98432_check | Load the CVE nftables table
+      ansible.builtin.command:
+        argv:
+          - "{{ __cve_2026_98432_check_firewall['command'] }}"
+          - -f
+          - /etc/nftables.d/cve_2026_98432.nft
+      when:
+        - __cve_2026_98432_check_firewall['backend'] | default('none') == 'nftables'
+        - __cve_2026_98432_check_nft_list['rc'] | default(1) != 0
+      changed_when: true
+
+    - name: Role cve_2026_98432_check | Stat nftables config files
+      ansible.builtin.stat:
+        path: "{{ __cve_2026_98432_check_nft_conf }}"
+      loop:
+        - /etc/nftables.conf
+        - /etc/sysconfig/nftables.conf
+      loop_control:
+        loop_var: __cve_2026_98432_check_nft_conf
+        label: "{{ __cve_2026_98432_check_nft_conf }}"
+      register: __cve_2026_98432_check_nft_conf_stats
+      when: __cve_2026_98432_check_firewall['backend'] | default('none') == 'nftables'
+
+    - name: Role cve_2026_98432_check | Include the drop rules from nftables.conf
+      ansible.builtin.lineinfile:
+        path: "{{ __cve_2026_98432_check_conf_stat['__cve_2026_98432_check_nft_conf'] }}"
+        regexp: 'nftables\.d/\*\.nft'
+        line: 'include "/etc/nftables.d/*.nft"'
+      loop: "{{ __cve_2026_98432_check_nft_conf_stats['results'] | default([]) }}"
+      loop_control:
+        loop_var: __cve_2026_98432_check_conf_stat
+        label: "{{ __cve_2026_98432_check_conf_stat['__cve_2026_98432_check_nft_conf'] | default('nftables.conf') }}"
+      when:
+        - __cve_2026_98432_check_firewall['backend'] | default('none') == 'nftables'
+        - __cve_2026_98432_check_conf_stat['stat'] is defined
+        - __cve_2026_98432_check_conf_stat['stat']['exists'] | bool
+
+    # iptables has no hdrlength match. The u32 match reads the IPv4 header length.
+    # This rule is runtime-only. It is not saved into a distro iptables rules file.
+    - name: Role cve_2026_98432_check | Check the iptables IP-option drop
+      ansible.builtin.command:
+        argv:
+          - "{{ __cve_2026_98432_check_firewall['command'] }}"
+          - -t
+          - raw
+          - -C
+          - PREROUTING
+          - -p
+          - tcp
+          - -m
+          - u32
+          - --u32
+          - "0>>24&0xF=6:15"
+          - -j
+          - DROP
+      register: __cve_2026_98432_check_iptables_check
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      when: __cve_2026_98432_check_firewall['backend'] | default('none') == 'iptables'
+
+    - name: Role cve_2026_98432_check | Insert the iptables IP-option drop
+      ansible.builtin.command:
+        argv:
+          - "{{ __cve_2026_98432_check_firewall['command'] }}"
+          - -t
+          - raw
+          - -I
+          - PREROUTING
+          - -p
+          - tcp
+          - -m
+          - u32
+          - --u32
+          - "0>>24&0xF=6:15"
+          - -j
+          - DROP
+      when:
+        - __cve_2026_98432_check_firewall['backend'] | default('none') == 'iptables'
+        - __cve_2026_98432_check_iptables_check['rc'] | default(1) != 0
+      changed_when: true

@@ -1,0 +1,39 @@
+---
+namespace: mrjoshuap
+name: ezcve
+version: 1.0.0
+readme: README.md
+authors:
+  - mrjoshuap <mrjoshuap@home.mrjoshuap.com>
+description: Read-only audit for CVE-2026-98432 (Linux IPv4 TCP use-after-free).
+license:
+  - MIT
+tags:
+  - security
+  - linux
+  - kernel
+  - cve
+repository: https://github.com/mrjoshuap/ansible-ezcve
+documentation: https://github.com/mrjoshuap/ansible-ezcve
+homepage: https://github.com/mrjoshuap/ansible-ezcve
+issues: https://github.com/mrjoshuap/ansible-ezcve/issues
+dependencies:
+  ansible.posix: ">=1.5.0"
+build_ignore:
+  - .gitignore
+  - .git
+  - .gitea
+  - .github
+  - .ansible
+  - .ansible-lint
+  - .yamllint.yml
+  - .vscode
+  - ansible.cfg
+  - requirements.yml
+  - molecule
+  - playbooks
+  - scripts
+  - tests
+  - importer_result.json
+  - "**/__pycache__"
+  - "*.pyc"

@@ -1,0 +1,174 @@
+---
+- name: Check CVE-2026-98432 version decisions
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    cve_2026_98432_check_cases:
+      - name: changelog hit beats an older EL version
+        os_id: redhat
+        os_version: "9.8"
+        kernel: 5.14.0-611.5.1.el9_8.x86_64
+        changelog_hit: true
+        changelog_source: rpm changelog kernel-core
+        risk: low
+        status: fixed
+        method: changelog
+      - name: EL 9.8 below the minimum is medium without listeners
+        os_id: redhat
+        os_version: "9.8"
+        kernel: 5.14.0-611.5.1.el9_8.x86_64
+        mptcp_enabled: "1"
+        risk: medium
+        status: vulnerable
+        method: version
+      - name: EL 9.8 at the minimum is fixed
+        os_id: redhat
+        os_version: "9.8"
+        kernel: 5.14.0-687.64.1.el9_8.x86_64
+        risk: low
+        status: fixed
+        method: version
+      - name: vulnerable kernel with an MPTCP listener is high
+        os_id: redhat
+        os_version: "9.8"
+        kernel: 5.14.0-611.5.1.el9_8.x86_64
+        listeners:
+          - address: "0.0.0.0:443"
+            process: nginx
+        risk: high
+        status: vulnerable
+        method: version
+      - name: EL 8.8 uses its own minimum
+        os_id: redhat
+        os_version: "8.8"
+        kernel: 4.18.0-477.178.1.el8_8.x86_64
+        risk: low
+        status: fixed
+        method: version
+      - name: EL 8.10 real-time kernel uses the RT minimum
+        os_id: redhat
+        os_version: "8.10"
+        kernel: 4.18.0-553.182.1.rt7.523.el8_10.x86_64
+        risk: low
+        status: fixed
+        method: version
+      - name: EL real-time kernel without an RT minimum is unknown
+        os_id: redhat
+        os_version: "9.8"
+        kernel: 5.14.0-687.64.1.rt1.el9_8.x86_64
+        risk: unknown
+        status: unknown
+        method: none
+      - name: installed fixed EL package sets reboot_required
+        os_id: redhat
+        os_version: "9.8"
+        kernel: 5.14.0-611.5.1.el9_8.x86_64
+        installed_versions:
+          - 5.14.0-687.64.1.el9_8
+          - 5.14.0-611.5.1.el9_8
+        reboot: true
+        risk: medium
+        status: vulnerable
+        method: version
+      - name: Ubuntu 24.04 proposed generic kernel is fixed
+        os_id: ubuntu
+        os_version: "24.04"
+        kernel: 6.8.0-149-generic
+        pkg_version: 6.8.0-149.149
+        risk: low
+        status: fixed
+        method: version
+      - name: Ubuntu 24.04 older generic kernel is vulnerable
+        os_id: ubuntu
+        os_version: "24.04"
+        kernel: 6.8.0-45-generic
+        pkg_version: 6.8.0-45.45
+        risk: medium
+        status: vulnerable
+        method: version
+      - name: Ubuntu 24.04 aws flavor without a changelog is unknown
+        os_id: ubuntu
+        os_version: "24.04"
+        kernel: 6.8.0-1069-aws
+        pkg_version: 6.8.0-1069.74
+        risk: unknown
+        status: unknown
+        method: none
+      - name: Ubuntu 20.04 has no published fix
+        os_id: ubuntu
+        os_version: "20.04"
+        kernel: 5.4.0-200-generic
+        pkg_version: 5.4.0-200.220
+        risk: medium
+        status: vulnerable
+        method: version
+      - name: Ubuntu 14.04 base kernel is older than 4.4
+        os_id: ubuntu
+        os_version: "14.04"
+        kernel: 3.13.0-170-generic
+        pkg_version: 3.13.0-170.220
+        risk: low
+        status: not_affected
+        method: upstream
+      - name: Debian 12 linux package at the fix is fixed
+        os_id: debian
+        os_version: "12"
+        kernel: 6.1.0-37-amd64
+        pkg_version: 6.1.190-1
+        risk: low
+        status: fixed
+        method: version
+      - name: Debian 12 linux package below the fix is vulnerable
+        os_id: debian
+        os_version: "12"
+        kernel: 6.1.0-30-amd64
+        pkg_version: 6.1.189-1
+        risk: medium
+        status: vulnerable
+        method: version
+      - name: Debian 12 linux-6.12 package is fixed
+        os_id: debian
+        os_version: "12"
+        kernel: 6.12.113+deb12-amd64
+        pkg_version: 6.12.113-1~deb12u1
+        risk: low
+        status: fixed
+        method: version
+      - name: Debian 13 at 6.12.113-1 is fixed
+        os_id: debian
+        os_version: "13"
+        kernel: 6.12.113-amd64
+        pkg_version: 6.12.113-1
+        risk: low
+        status: fixed
+        method: version
+      - name: Fedora on a fixed upstream stable is fixed
+        os_id: fedora
+        os_version: "42"
+        kernel: 6.12.113-200.fc42.x86_64
+        risk: low
+        status: fixed
+        method: upstream
+      - name: Fedora below the upstream stable is vulnerable
+        os_id: fedora
+        os_version: "42"
+        kernel: 6.12.100-200.fc42.x86_64
+        risk: medium
+        status: vulnerable
+        method: upstream
+      - name: non-EL kernel on a RHEL userspace uses upstream
+        os_id: redhat
+        os_version: "9.8"
+        kernel: 7.0.14-linuxkit
+        risk: medium
+        status: vulnerable
+        method: upstream
+
+  tasks:
+    - name: Role cve_2026_98432_check | Evaluate fixture {{ __cve_2026_98432_check_case.name }}
+      ansible.builtin.include_tasks: evaluate_case.yml
+      loop: "{{ cve_2026_98432_check_cases }}"
+      loop_control:
+        loop_var: __cve_2026_98432_check_case
+        label: "{{ __cve_2026_98432_check_case.name }}"

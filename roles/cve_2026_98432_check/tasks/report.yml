@@ -1,0 +1,34 @@
+---
+- name: Role cve_2026_98432_check | Show the CVE summary
+  ansible.builtin.debug:
+    msg: "{{ cve_2026_98432_check_summary | mrjoshuap.ezcve.report_lines }}"
+
+- name: Role cve_2026_98432_check | Create the report directory
+  ansible.builtin.file:
+    path: "{{ cve_2026_98432_check_report_dir }}"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when: cve_2026_98432_check_report_dir | length > 0
+
+- name: Role cve_2026_98432_check | Write the JSON report
+  ansible.builtin.copy:
+    dest: "{{ cve_2026_98432_check_report_dir }}/{{ inventory_hostname }}.json"
+    mode: "0644"
+    content: "{{ cve_2026_98432_check_summary | to_nice_json }}\n"
+  delegate_to: localhost
+  become: false
+  when: cve_2026_98432_check_report_dir | length > 0
+
+- name: Role cve_2026_98432_check | Write the CSV report
+  ansible.builtin.copy:
+    dest: "{{ cve_2026_98432_check_report_dir }}/{{ inventory_hostname }}.csv"
+    mode: "0644"
+    content: "{{ cve_2026_98432_check_summary | mrjoshuap.ezcve.csv }}"
+  delegate_to: localhost
+  become: false
+  when:
+    - cve_2026_98432_check_report_dir | length > 0
+    - cve_2026_98432_check_report_csv | bool

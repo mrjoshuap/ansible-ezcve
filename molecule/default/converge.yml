@@ -1,0 +1,25 @@
+---
+- name: Audit localhost for CVE-2026-98432
+  hosts: all
+  gather_facts: true
+  become: true
+  roles:
+    - role: mrjoshuap.ezcve.cve_2026_98432_check
+
+- name: Verify the CVE summary
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Role cve_2026_98432_check | Assert the summary has the audit fields
+      ansible.builtin.assert:
+        that:
+          - cve_2026_98432_check_summary is mapping
+          - cve_2026_98432_check_summary['cve'] == 'CVE-2026-98432'
+          - cve_2026_98432_check_risk in ['low', 'medium', 'high', 'unknown']
+          - cve_2026_98432_check_kernel_status in ['fixed', 'vulnerable', 'not_affected', 'unknown']
+          - cve_2026_98432_check_summary['kernel'] | length > 0
+          - cve_2026_98432_check_summary['os_id'] | length > 0
+          - cve_2026_98432_check_summary['mptcp_listeners'] is sequence
+          - cve_2026_98432_check_summary['mptcp_listener_count'] | int >= 0
+          - cve_2026_98432_check_summary['notice'] | length > 0
+        fail_msg: "The role did not publish a usable cve_2026_98432_check_summary."

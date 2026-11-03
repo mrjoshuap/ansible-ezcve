@@ -1,0 +1,34 @@
+---
+- name: Role cve_2026_98432_check | Validate arguments
+  ansible.builtin.import_tasks: validate.yml
+  tags:
+    - cve_2026_98432_check
+    - cve_check
+    - report
+
+- name: Role cve_2026_98432_check | Gather kernel and MPTCP state
+  ansible.builtin.import_tasks: gather.yml
+  tags:
+    - cve_2026_98432_check
+    - cve_check
+    - report
+
+- name: Role cve_2026_98432_check | Evaluate fix status and risk
+  ansible.builtin.import_tasks: evaluate.yml
+  tags:
+    - cve_2026_98432_check
+    - cve_check
+    - report
+
+- name: Role cve_2026_98432_check | Report the per-host summary
+  ansible.builtin.import_tasks: report.yml
+  tags:
+    - cve_2026_98432_check
+    - cve_check
+    - report
+
+- name: Role cve_2026_98432_check | Apply optional mitigation
+  ansible.builtin.import_tasks: mitigate.yml
+  tags:
+    - cve_2026_98432_check
+    - mitigate

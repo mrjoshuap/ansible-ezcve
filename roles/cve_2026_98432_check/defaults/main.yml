@@ -1,0 +1,113 @@
+---
+# External variables use the role-name prefix cve_2026_98432_check_.
+# Override a mapping by replacing the whole mapping. Ansible does not deep-merge
+# extra vars into these defaults.
+
+# Read-only audit unless this is true.
+cve_2026_98432_check_apply_mitigation: false
+
+# With mitigation, also set net.ipv4.tcp_migrate_req=0 when that sysctl exists.
+cve_2026_98432_check_disable_tcp_migrate_req: true
+
+# With mitigation, drop IPv4 TCP packets that carry IP options.
+cve_2026_98432_check_drop_ipv4_options: false
+
+# auto uses nftables when nft is installed, otherwise iptables.
+# none skips the packet filter even if drop_ipv4_options is true.
+cve_2026_98432_check_firewall_backend: auto
+
+# Empty skips file output. A relative path is on the controller.
+# One JSON file per host: <dir>/<inventory_hostname>.json
+cve_2026_98432_check_report_dir: ""
+
+# With report_dir, also write <dir>/<inventory_hostname>.csv.
+cve_2026_98432_check_report_csv: false
+
+# Matched against the running kernel changelog. Override if a vendor
+# records the fix with different wording.
+cve_2026_98432_check_changelog_pattern: 'CVE-2026-98432|free inet_opt and ireq_opt'
+
+# Upstream stable releases that contain the fix. Used for Fedora and for
+# kernels that are not a distro build (no .elN tag, no Debian package rule).
+cve_2026_98432_check_upstream_fixed:
+  - "5.10.272"
+  - "5.15.223"
+  - "6.1.190"
+  - "6.6.159"
+  - "6.12.113"
+  - "6.18.56"
+  - "7.2.10"
+  - "7.3"
+
+# Minimum fixed package versions as of 2026-11-03.
+# EL keys are distribution versions. The major-only key is the fallback.
+# Ubuntu and Debian entries match a package-version prefix and a kernel flavor.
+# pocket records where that build lived on 2026-11-03. A host running it is
+# still fixed. proposed means it was not in the updates pocket yet.
+cve_2026_98432_check_fixed_kernels:
+  redhat:
+    "8.8": "4.18.0-477.178.1.el8_8"
+    "8.10": "4.18.0-553.182.1.el8_10"
+    "8": "4.18.0-553.182.1.el8_10"
+    "9.2": "5.14.0-284.202.1.el9_2"
+    "9.4": "5.14.0-427.161.1.el9_4"
+    "9.6": "5.14.0-570.154.1.el9_6"
+    "9.8": "5.14.0-687.64.1.el9_8"
+    "9": "5.14.0-687.64.1.el9_8"
+    "10.0": "6.12.0-55.117.1.el10_0"
+    "10.2": "6.12.0-211.72.1.el10_2"
+    "10": "6.12.0-211.72.1.el10_2"
+  debian:
+    "12":
+      - prefix: "6.1."
+        minimum: "6.1.190-1"
+      - prefix: "6.12."
+        minimum: "6.12.113-1~deb12u1"
+    "13":
+      - prefix: "6.12."
+        minimum: "6.12.113-1"
+  ubuntu:
+    "22.04":
+      - flavor: generic
+        prefix: "5.15.0-"
+        minimum: "5.15.0-203.213"
+        pocket: proposed
+      - flavor: generic
+        prefix: "6.8.0-"
+        minimum: "6.8.0-149.149~22.04.1"
+        pocket: proposed
+    "24.04":
+      - flavor: generic
+        prefix: "6.8.0-"
+        minimum: "6.8.0-149.149"
+        pocket: proposed
+      - flavor: generic
+        prefix: "7.0.0-"
+        minimum: "7.0.0-43.43~24.04.1"
+        pocket: proposed
+    "26.04":
+      - flavor: generic
+        prefix: "7.0.0-"
+        minimum: "7.0.0-43.43"
+        pocket: proposed
+    "26.10":
+      - flavor: generic
+        prefix: "7.3.0-"
+        minimum: "7.3.0-10.10"
+        pocket: updates
+
+# Real-time NVRs are not comparable with the non-RT table.
+# Only versions confirmed from advisories are listed. Other RT kernels rely
+# on the changelog and are reported unknown when the changelog is absent.
+cve_2026_98432_check_fixed_kernels_rt:
+  redhat:
+    "8.10": "4.18.0-553.182.1.rt7.523.el8_10"
+
+# Releases with no published fix as of 2026-11-03.
+# Kernels older than 4.4 are still reported not_affected.
+cve_2026_98432_check_unfixed_releases:
+  ubuntu:
+    - "14.04"
+    - "16.04"
+    - "18.04"
+    - "20.04"
