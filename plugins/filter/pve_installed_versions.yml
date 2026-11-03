@@ -1,0 +1,28 @@
+---
+DOCUMENTATION:
+  name: pve_installed_versions
+  version_added: "1.0.1"
+  short_description: return versions of installed proxmox-kernel packages
+  description:
+    - Return the C(version) of every installed package named C(proxmox-kernel-*-pve) or C(proxmox-kernel-*-pve-signed).
+    - Skip helper and metapackages that do not name a kernel ABI.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+    - O(_input) is the mapping produced by C(package_facts).
+  positional: _input
+  options:
+    _input:
+      description: C(ansible_facts['packages']).
+      type: dict
+      required: true
+
+EXAMPLES: |
+  {{ ansible_facts["packages"] | mrjoshuap.ezcve.pve_installed_versions }}
+
+RETURN:
+  _value:
+    description: Installed proxmox-kernel ABI versions.
+    type: list
+    elements: str

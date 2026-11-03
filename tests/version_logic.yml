@@ -164,6 +164,71 @@
         risk: medium
         status: vulnerable
         method: upstream
+      - name: Proxmox kernel at 7.0.14-25-pve is fixed
+        os_id: proxmox
+        os_version: "13"
+        kernel: 7.0.14-25-pve
+        risk: low
+        status: fixed
+        method: version
+      - name: Proxmox kernel newer than 7.0.14-25-pve is fixed
+        os_id: proxmox
+        os_version: "13"
+        kernel: 7.0.14-26-pve
+        risk: low
+        status: fixed
+        method: version
+      - name: Proxmox kernel 7.0.14-24-pve is vulnerable
+        os_id: proxmox
+        os_version: "13"
+        kernel: 7.0.14-24-pve
+        risk: medium
+        status: vulnerable
+        method: version
+      - name: Proxmox 7.0.2-6-pve is older than the fixed ABI
+        os_id: proxmox
+        os_version: "13"
+        kernel: 7.0.2-6-pve
+        risk: medium
+        status: vulnerable
+        method: version
+      - name: Proxmox 6.8 kernel has no fixed build in the advisory
+        os_id: proxmox
+        os_version: "12"
+        kernel: 6.8.12-30-pve
+        risk: medium
+        status: vulnerable
+        method: version
+      - name: Proxmox 6.17 kernel has no fixed build in the advisory
+        os_id: proxmox
+        os_version: "13"
+        kernel: 6.17.13-9-pve
+        risk: medium
+        status: vulnerable
+        method: version
+      - name: Proxmox changelog hit beats an older ABI
+        os_id: proxmox
+        os_version: "13"
+        kernel: 7.0.14-24-pve
+        changelog_hit: true
+        changelog_source: /usr/share/doc/proxmox-kernel-7.0.14-24-pve/changelog.Debian.gz
+        risk: low
+        status: fixed
+        method: changelog
+      - name: installed Proxmox kernel newer than the running one needs a reboot
+        os_id: proxmox
+        os_version: "13"
+        kernel: 7.0.14-24-pve
+        installed_versions:
+          - 7.0.14-25
+          - 7.0.14-24
+        installed_deb_versions:
+          - 7.0.14-25
+          - 7.0.14-24
+        reboot: true
+        risk: medium
+        status: vulnerable
+        method: version
 
   tasks:
     - name: Role cve_2026_98432_check | Evaluate fixture {{ __cve_2026_98432_check_case.name }}

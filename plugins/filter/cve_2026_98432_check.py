@@ -24,8 +24,18 @@ def _text(value: Any) -> str:
     return str(value)
 
 
-def cve_2026_98432_check_os_id(distribution: str, os_family: str) -> str:
-    """Normalize a distribution to redhat, fedora, debian, ubuntu, or unsupported."""
+def cve_2026_98432_check_os_id(
+    distribution: str,
+    os_family: str,
+    kernel: str = "",
+) -> str:
+    """Normalize a distribution to redhat, fedora, debian, ubuntu, proxmox, or unsupported.
+
+    A running release that ends in ``-pve`` is a Proxmox kernel even when
+    ``/etc/os-release`` still says Debian.
+    """
+    if _text(kernel).endswith("-pve"):
+        return "proxmox"
     name = _text(distribution)
     family = _text(os_family)
     if name == "Ubuntu":
@@ -544,6 +554,31 @@ def cve_2026_98432_check_zgrep_summary(results: list[dict[str, Any]]) -> dict[st
     return {"checked": checked, "hit": hit, "source": source}
 
 
+def cve_2026_98432_check_pve_version(kernel: str) -> str:
+    """Return the Proxmox ABI from ``uname -r``, without the ``-pve`` suffix."""
+    text = _text(kernel)
+    if text.endswith("-pve"):
+        return text[: -len("-pve")]
+    return ""
+
+
+_PVE_PACKAGE = re.compile(r"^proxmox-kernel-.+-pve(?:-signed)?$")
+
+
+def cve_2026_98432_check_pve_installed_versions(packages: dict[str, Any]) -> list[str]:
+    """Return versions of installed proxmox-kernel image packages."""
+    found: list[str] = []
+    if not isinstance(packages, dict):
+        return found
+    for name, entries in packages.items():
+        if _PVE_PACKAGE.match(_text(name)) is None:
+            continue
+        for entry in entries or []:
+            if isinstance(entry, dict) and entry.get("version"):
+                found.append(_text(entry["version"]))
+    return found
+
+
 def cve_2026_98432_check_deb_package_version(packages: dict[str, Any], kernel: str) -> str:
     """Return the package version of the running Debian or Ubuntu kernel."""
     if not isinstance(packages, dict):
@@ -719,6 +754,8 @@ class FilterModule:
             "changelog_hit": cve_2026_98432_check_changelog_hit,
             "rpm_changelog": cve_2026_98432_check_rpm_changelog,
             "zgrep_summary": cve_2026_98432_check_zgrep_summary,
+            "pve_version": cve_2026_98432_check_pve_version,
+            "pve_installed_versions": cve_2026_98432_check_pve_installed_versions,
             "deb_package_version": cve_2026_98432_check_deb_package_version,
             "installed_nvrs": cve_2026_98432_check_installed_nvrs,
             "deb_installed_versions": cve_2026_98432_check_deb_installed_versions,

@@ -174,6 +174,51 @@ def test_ss_parser() -> None:
     assert unsupported["listeners"] == []
 
 
+def test_pve_kernel_abi() -> None:
+    version = HELPERS.cve_2026_98432_check_pve_version
+    assert version("7.0.14-25-pve") == "7.0.14-25"
+    assert version("6.8.12-9-pve") == "6.8.12-9"
+    assert version("7.0.14-25-pve-signed") == ""
+    assert version("6.12.113-amd64") == ""
+    assert HELPERS.cve_2026_98432_check_deb_ge("7.0.14-25", "7.0.14-25")
+    assert HELPERS.cve_2026_98432_check_deb_ge("7.0.14-26", "7.0.14-25")
+    assert not HELPERS.cve_2026_98432_check_deb_ge("7.0.14-24", "7.0.14-25")
+    assert not HELPERS.cve_2026_98432_check_deb_ge("7.0.2-6", "7.0.14-25")
+    assert not HELPERS.cve_2026_98432_check_deb_ge("6.8.12-30", "7.0.14-25")
+    assert not HELPERS.cve_2026_98432_check_deb_ge("6.17.13-9", "7.0.14-25")
+    assert not HELPERS.cve_2026_98432_check_deb_ge("6.14.11-9", "7.0.14-25")
+    packages = {
+        "proxmox-kernel-7.0.14-25-pve-signed": [{"version": "7.0.14-25"}],
+        "proxmox-kernel-7.0.14-24-pve": [{"version": "7.0.14-24"}],
+        "proxmox-kernel-helper": [{"version": "8.1.0"}],
+        "linux-image-6.12.113-amd64": [{"version": "6.12.113-1"}],
+    }
+    found = HELPERS.cve_2026_98432_check_pve_installed_versions(packages)
+    assert found == ["7.0.14-25", "7.0.14-24"]
+    assert HELPERS.cve_2026_98432_check_reboot_required(
+        found,
+        "7.0.14-24",
+        "7.0.14-25",
+        "deb",
+    )
+    assert not HELPERS.cve_2026_98432_check_reboot_required(
+        found,
+        "7.0.14-25",
+        "7.0.14-25",
+        "deb",
+    )
+
+
+def test_os_id_treats_pve_kernel_as_proxmox() -> None:
+    os_id = HELPERS.cve_2026_98432_check_os_id
+    assert os_id("Debian", "Debian", "7.0.14-25-pve") == "proxmox"
+    assert os_id("Debian", "Debian", "6.8.12-9-pve") == "proxmox"
+    assert os_id("Debian", "Debian", "6.12.113-amd64") == "debian"
+    assert os_id("Ubuntu", "Debian") == "ubuntu"
+    assert os_id("Rocky", "RedHat", "5.14.0-687.64.1.el9_8.x86_64") == "redhat"
+    assert os_id("Fedora", "RedHat", "6.12.113-200.fc42.x86_64") == "fedora"
+
+
 def test_reboot_required_for_older_running_kernel() -> None:
     assert HELPERS.cve_2026_98432_check_reboot_required(
         ["5.14.0-687.64.1.el9_8", "5.14.0-611.5.1.el9_8"],
@@ -196,6 +241,8 @@ def main() -> None:
     test_el_minimum_uses_minor_and_skips_non_el()
     test_ubuntu_rule_is_flavor_specific()
     test_ss_parser()
+    test_pve_kernel_abi()
+    test_os_id_treats_pve_kernel_as_proxmox()
     test_reboot_required_for_older_running_kernel()
     print("ok")
 

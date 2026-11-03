@@ -95,6 +95,13 @@ cve_2026_98432_check_fixed_kernels:
         prefix: "7.3.0-"
         minimum: "7.3.0-10.10"
         pocket: updates
+  # Proxmox VE and Proxmox Backup Server. uname -r is <abi>-pve.
+  # PSA-2026-00080-1 (2026-10-31) fixed proxmox-kernel-7.0.14-25-pve and the
+  # signed package of that ABI. Older ABIs, including 6.8, 6.14, 6.17, and
+  # 7.0.14-24, have no separate fixed build in that advisory. Compare the
+  # ABI with dpkg version order. 7.0.14-26 and later are fixed. 6.8.12-30
+  # is not, because it is still below this minimum.
+  proxmox: "7.0.14-25"
 
 # Real-time NVRs are not comparable with the non-RT table.
 # Only versions confirmed from advisories are listed. Other RT kernels rely

@@ -71,6 +71,7 @@ argument_specs:
         description:
           - Distro minimum fixed versions.
           - The shipped mapping is in defaults/main.yml. Replacing this drops keys you omit.
+          - proxmox is one ABI string, such as 7.0.14-25. Other families are mappings.
       cve_2026_98432_check_fixed_kernels_rt:
         type: dict
         required: false

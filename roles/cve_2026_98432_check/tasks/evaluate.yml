@@ -140,6 +140,41 @@
     - __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
     - __cve_2026_98432_check_deb_rule | default({}) | length > 0
 
+- name: Role cve_2026_98432_check | Select the Proxmox minimum
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_pve_running: "{{ __cve_2026_98432_check_kernel | mrjoshuap.ezcve.pve_version }}"
+    __cve_2026_98432_check_pve_minimum: >-
+      {{ (cve_2026_98432_check_fixed_kernels | default({})).proxmox | default('', true) }}
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id == 'proxmox'
+
+- name: Role cve_2026_98432_check | Compare the Proxmox kernel to the minimum
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_kernel_status: >-
+      {{
+        'fixed'
+        if (
+          __cve_2026_98432_check_pve_running
+          | mrjoshuap.ezcve.deb_ge(__cve_2026_98432_check_pve_minimum)
+        )
+        else 'vulnerable'
+      }}
+    __cve_2026_98432_check_detection_method: version
+    __cve_2026_98432_check_detection_detail: >-
+      {{ __cve_2026_98432_check_kernel }} compared with dpkg version order to
+      proxmox-kernel-{{ __cve_2026_98432_check_pve_minimum }}-pve.
+    __cve_2026_98432_check_minimum: "{{ __cve_2026_98432_check_pve_minimum }}"
+    __cve_2026_98432_check_version_kind: deb
+    __cve_2026_98432_check_running_version: "{{ __cve_2026_98432_check_pve_running }}"
+    __cve_2026_98432_check_installed_versions: "{{ __cve_2026_98432_check_installed_deb_versions }}"
+    __cve_2026_98432_check_decided: true
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id == 'proxmox'
+    - __cve_2026_98432_check_pve_running | default('') | length > 0
+    - __cve_2026_98432_check_pve_minimum | default('') | length > 0
+
 - name: Role cve_2026_98432_check | Compare Fedora and non-EL kernels to upstream
   ansible.builtin.set_fact:
     __cve_2026_98432_check_kernel_status: "{{ __cve_2026_98432_check_upstream['state'] }}"

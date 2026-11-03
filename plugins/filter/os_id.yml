@@ -4,13 +4,14 @@ DOCUMENTATION:
   version_added: "1.0.0"
   short_description: normalize a distribution to a supported family
   description:
-    - Return V(redhat), V(fedora), V(debian), V(ubuntu), or V(unsupported).
+    - Return V(redhat), V(fedora), V(debian), V(ubuntu), V(proxmox), or V(unsupported).
+    - A kernel release ending in C(-pve) is V(proxmox) even when the distribution name is Debian.
     - Ubuntu is matched by distribution name. Other Red Hat family distributions use O(os_family).
   author:
     - mrjoshuap
   notes:
     - This filter runs on the controller.
-  positional: _input, os_family
+  positional: _input, os_family, kernel
   options:
     _input:
       description: Distribution name, such as V(Rocky) or V(Ubuntu).
@@ -20,10 +21,15 @@ DOCUMENTATION:
       description: Value of C(ansible_facts['os_family']).
       type: str
       required: true
+    kernel:
+      description: Running kernel release. Optional. A C(-pve) suffix selects V(proxmox).
+      type: str
+      required: false
 
 EXAMPLES: |
   {{ "Ubuntu" | mrjoshuap.ezcve.os_id("Debian") }}
   {{ "Rocky" | mrjoshuap.ezcve.os_id("RedHat") }}
+  {{ "Debian" | mrjoshuap.ezcve.os_id("Debian", "7.0.14-25-pve") }}
 
 RETURN:
   _value:

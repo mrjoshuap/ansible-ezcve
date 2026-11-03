@@ -10,7 +10,14 @@
 
 - name: Role cve_2026_98432_check | Normalize the operating system id
   ansible.builtin.set_fact:
-    __cve_2026_98432_check_os_id: "{{ ansible_facts['distribution'] | mrjoshuap.ezcve.os_id(ansible_facts['os_family'] | default('')) }}"
+    __cve_2026_98432_check_os_id: >-
+      {{
+        ansible_facts['distribution']
+        | mrjoshuap.ezcve.os_id(
+          ansible_facts['os_family'] | default(''),
+          ansible_facts['kernel'] | default('')
+        )
+      }}
     __cve_2026_98432_check_os_version: "{{ ansible_facts['distribution_version'] | default('') }}"
     __cve_2026_98432_check_kernel: "{{ ansible_facts['kernel'] }}"
     __cve_2026_98432_check_distribution: "{{ ansible_facts['distribution'] | default('') }}"
@@ -72,7 +79,7 @@
   ansible.builtin.package_facts:
     manager: auto
   failed_when: false
-  when: __cve_2026_98432_check_os_id in ['redhat', 'fedora', 'debian', 'ubuntu']
+  when: __cve_2026_98432_check_os_id in ['redhat', 'fedora', 'debian', 'ubuntu', 'proxmox']
 
 - name: Role cve_2026_98432_check | Record installed kernel package versions
   ansible.builtin.set_fact:
@@ -92,6 +99,16 @@
         | mrjoshuap.ezcve.deb_installed_versions
       }}
   when: __cve_2026_98432_check_os_id in ['redhat', 'fedora', 'debian', 'ubuntu']
+
+- name: Role cve_2026_98432_check | Record installed Proxmox kernel versions
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_pkg_version: "{{ __cve_2026_98432_check_kernel | mrjoshuap.ezcve.pve_version }}"
+    __cve_2026_98432_check_installed_deb_versions: >-
+      {{
+        ansible_facts['packages'] | default({})
+        | mrjoshuap.ezcve.pve_installed_versions
+      }}
+  when: __cve_2026_98432_check_os_id == 'proxmox'
 
 # No module prints an RPM changelog. The query is read-only.
 - name: Role cve_2026_98432_check | Read the kernel-core RPM changelog  # noqa: command-instead-of-module
@@ -134,14 +151,21 @@
       }}
   when: __cve_2026_98432_check_os_id in ['redhat', 'fedora']
 
-- name: Role cve_2026_98432_check | Set Debian changelog paths
+- name: Role cve_2026_98432_check | Set Debian and Ubuntu changelog paths
   ansible.builtin.set_fact:
     __cve_2026_98432_check_changelog_paths:
       - "/usr/share/doc/linux-modules-{{ __cve_2026_98432_check_kernel }}/changelog.Debian.gz"
       - "/usr/share/doc/linux-image-{{ __cve_2026_98432_check_kernel }}/changelog.Debian.gz"
   when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
 
-- name: Role cve_2026_98432_check | Stat Debian kernel changelogs
+- name: Role cve_2026_98432_check | Set Proxmox changelog paths
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_changelog_paths:
+      - "/usr/share/doc/proxmox-kernel-{{ __cve_2026_98432_check_kernel }}/changelog.Debian.gz"
+      - "/usr/share/doc/proxmox-kernel-{{ __cve_2026_98432_check_kernel }}-signed/changelog.Debian.gz"
+  when: __cve_2026_98432_check_os_id == 'proxmox'
+
+- name: Role cve_2026_98432_check | Stat kernel changelogs
   ansible.builtin.stat:
     path: "{{ __cve_2026_98432_check_path }}"
   loop: "{{ __cve_2026_98432_check_changelog_paths }}"
@@ -149,10 +173,10 @@
     loop_var: __cve_2026_98432_check_path
     label: "{{ __cve_2026_98432_check_path }}"
   register: __cve_2026_98432_check_changelog_stats
-  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
+  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu', 'proxmox']
 
 # zgrep is the read-only way to search a gzipped Debian changelog.
-- name: Role cve_2026_98432_check | Search Debian changelogs for the fix
+- name: Role cve_2026_98432_check | Search kernel changelogs for the fix
   ansible.builtin.command:
     argv:
       - zgrep
@@ -168,14 +192,14 @@
   failed_when: false
   check_mode: false
   when:
-    - __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
+    - __cve_2026_98432_check_os_id in ['debian', 'ubuntu', 'proxmox']
     - __cve_2026_98432_check_stat['stat'] is defined
     - __cve_2026_98432_check_stat['stat']['exists'] | bool
 
-- name: Role cve_2026_98432_check | Record the Debian changelog result
+- name: Role cve_2026_98432_check | Record the Debian or Proxmox changelog result
   ansible.builtin.set_fact:
     __cve_2026_98432_check_deb_changelog: "{{ __cve_2026_98432_check_zgrep['results'] | default([]) | mrjoshuap.ezcve.zgrep_summary }}"
-  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu']
+  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu', 'proxmox']
 
 - name: Role cve_2026_98432_check | Record changelog evidence
   ansible.builtin.set_fact:

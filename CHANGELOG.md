@@ -2,6 +2,7 @@
 
 ## 1.0.1-dev
 
+- Classify `*-pve` kernels against PSA-2026-00080-1. Fixed in `proxmox-kernel-7.0.14-25-pve`.
 - Release development version for 1.0.1.
 - Document the collection as a series of CVE audit roles. CVE-2026-98432 is the first.
 - Add a browser-only dashboard that reads per-host JSON reports in the tab.

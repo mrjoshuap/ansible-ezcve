@@ -1,0 +1,27 @@
+---
+DOCUMENTATION:
+  name: pve_version
+  version_added: "1.0.1"
+  short_description: return the Proxmox kernel ABI without the -pve suffix
+  description:
+    - Strip a trailing C(-pve) from O(_input).
+    - Return an empty string when the release is not a Proxmox kernel.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+    - C(uname -r) on Proxmox VE and Proxmox Backup Server is C(<abi>-pve). The package version of C(proxmox-kernel-<abi>-pve) is that ABI.
+  positional: _input
+  options:
+    _input:
+      description: Running kernel release, such as V(7.0.14-25-pve).
+      type: str
+      required: true
+
+EXAMPLES: |
+  {{ "7.0.14-25-pve" | mrjoshuap.ezcve.pve_version }}
+
+RETURN:
+  _value:
+    description: ABI compared with dpkg version order, or an empty string.
+    type: str
