@@ -14,8 +14,8 @@ tags:
   - kernel
   - cve
 repository: https://github.com/mrjoshuap/ansible-ezcve
-documentation: https://github.com/mrjoshuap/ansible-ezcve
-homepage: https://github.com/mrjoshuap/ansible-ezcve
+documentation: https://mrjoshuap.github.io/ansible-ezcve/
+homepage: https://mrjoshuap.github.io/ansible-ezcve/
 issues: https://github.com/mrjoshuap/ansible-ezcve/issues
 dependencies:
   ansible.posix: ">=1.5.0"
@@ -29,7 +29,10 @@ build_ignore:
   - .yamllint.yml
   - .vscode
   - ansible.cfg
+  - docs
+  - mkdocs.yml
   - requirements.yml
+  - site
   - molecule
   - playbooks
   - scripts

@@ -1,0 +1,28 @@
+---
+site_name: mrjoshuap.ezcve
+site_url: https://mrjoshuap.github.io/ansible-ezcve/
+site_description: Read-only Ansible audit for CVE-2026-98432.
+repo_url: https://github.com/mrjoshuap/ansible-ezcve
+repo_name: mrjoshuap/ansible-ezcve
+edit_uri: edit/main/docs/
+copyright: MIT
+theme:
+  name: material
+  features:
+    - navigation.tracking
+    - content.action.edit
+nav:
+  - Home: index.md
+  - User guide: user-guide.md
+  - Developer guide: developer-guide.md
+  - Changelog: changelog.md
+extra_javascript:
+  - javascripts/versions.js
+extra_css:
+  - stylesheets/versions.css
+hooks:
+  - scripts/mkdocs_changelog.py
+markdown_extensions:
+  - tables
+  - toc:
+      permalink: true
