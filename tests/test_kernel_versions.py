@@ -209,6 +209,56 @@ def test_pve_kernel_abi() -> None:
     )
 
 
+def test_rpi_kernel_uses_upstream_floors() -> None:
+    floors = [
+        "5.10.272",
+        "5.15.223",
+        "6.1.190",
+        "6.6.159",
+        "6.12.113",
+        "6.18.56",
+        "7.2.10",
+        "7.3",
+    ]
+    status = HELPERS.cve_2026_98432_check_upstream_status
+    assert status("6.18.50+rpt-rpi-v8", floors)["state"] == "vulnerable"
+    assert status("6.18.59+rpt-rpi-v8", floors)["state"] == "fixed"
+    assert status("6.18.59-v8+", floors)["state"] == "fixed"
+    assert status("6.12.113+rpt-rpi-2712", floors)["state"] == "fixed"
+    assert status("6.12.100+rpt-rpi-2712", floors)["state"] == "vulnerable"
+    assert status("6.1.190-v8+", floors)["state"] == "fixed"
+    assert status("6.1.21-v7l+", floors)["state"] == "vulnerable"
+    minimum = HELPERS.cve_2026_98432_check_upstream_minimum
+    assert minimum("6.18.50+rpt-rpi-v8", floors) == {
+        "minimum": "6.18.56",
+        "prefix": "6.18.",
+    }
+    assert minimum("6.12.100+rpt-rpi-2712", floors)["minimum"] == "6.12.113"
+    assert HELPERS.cve_2026_98432_check_rpi_version("6.18.50+rpt-rpi-v8") == "6.18.50"
+    packages = {
+        "linux-image-rpi-v8": [{"version": "1:6.18.59-1+rpt1"}],
+        "linux-image-6.18.50+rpt-rpi-v8": [{"version": "1:6.18.50-1+rpt1"}],
+        "linux-image-6.12.113-arm64": [{"version": "6.12.113-1"}],
+        "raspberrypi-kernel": [{"version": "1:1.20230405-1"}],
+    }
+    found = HELPERS.cve_2026_98432_check_rpi_installed_versions(packages)
+    assert found == ["6.18.59", "6.18.50"]
+    assert HELPERS.cve_2026_98432_check_reboot_required(
+        found,
+        "6.18.50",
+        "6.18.56",
+        "deb",
+        "6.18.",
+    )
+    assert not HELPERS.cve_2026_98432_check_reboot_required(
+        ["6.12.113"],
+        "6.18.50",
+        "6.18.56",
+        "deb",
+        "6.18.",
+    )
+
+
 def test_os_id_treats_pve_kernel_as_proxmox() -> None:
     os_id = HELPERS.cve_2026_98432_check_os_id
     assert os_id("Debian", "Debian", "7.0.14-25-pve") == "proxmox"
@@ -217,6 +267,10 @@ def test_os_id_treats_pve_kernel_as_proxmox() -> None:
     assert os_id("Ubuntu", "Debian") == "ubuntu"
     assert os_id("Rocky", "RedHat", "5.14.0-687.64.1.el9_8.x86_64") == "redhat"
     assert os_id("Fedora", "RedHat", "6.12.113-200.fc42.x86_64") == "fedora"
+    assert os_id("Debian", "Debian", "6.18.50+rpt-rpi-v8") == "raspberrypi"
+    assert os_id("Debian", "Debian", "6.1.21-v8+") == "raspberrypi"
+    assert os_id("Raspbian", "Debian", "6.18.59") == "raspberrypi"
+    assert os_id("Debian", "Debian", "6.12.113-arm64") == "debian"
 
 
 def test_reboot_required_for_older_running_kernel() -> None:
@@ -242,6 +296,7 @@ def main() -> None:
     test_ubuntu_rule_is_flavor_specific()
     test_ss_parser()
     test_pve_kernel_abi()
+    test_rpi_kernel_uses_upstream_floors()
     test_os_id_treats_pve_kernel_as_proxmox()
     test_reboot_required_for_older_running_kernel()
     print("ok")

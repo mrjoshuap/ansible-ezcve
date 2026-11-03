@@ -79,7 +79,7 @@
   ansible.builtin.package_facts:
     manager: auto
   failed_when: false
-  when: __cve_2026_98432_check_os_id in ['redhat', 'fedora', 'debian', 'ubuntu', 'proxmox']
+  when: __cve_2026_98432_check_os_id in ['redhat', 'fedora', 'debian', 'ubuntu', 'proxmox', 'raspberrypi']
 
 - name: Role cve_2026_98432_check | Record installed kernel package versions
   ansible.builtin.set_fact:
@@ -109,6 +109,16 @@
         | mrjoshuap.ezcve.pve_installed_versions
       }}
   when: __cve_2026_98432_check_os_id == 'proxmox'
+
+- name: Role cve_2026_98432_check | Record installed Raspberry Pi kernel versions
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_pkg_version: "{{ __cve_2026_98432_check_kernel | mrjoshuap.ezcve.rpi_version }}"
+    __cve_2026_98432_check_installed_deb_versions: >-
+      {{
+        ansible_facts['packages'] | default({})
+        | mrjoshuap.ezcve.rpi_installed_versions
+      }}
+  when: __cve_2026_98432_check_os_id == 'raspberrypi'
 
 # No module prints an RPM changelog. The query is read-only.
 - name: Role cve_2026_98432_check | Read the kernel-core RPM changelog  # noqa: command-instead-of-module
@@ -165,6 +175,18 @@
       - "/usr/share/doc/proxmox-kernel-{{ __cve_2026_98432_check_kernel }}-signed/changelog.Debian.gz"
   when: __cve_2026_98432_check_os_id == 'proxmox'
 
+- name: Role cve_2026_98432_check | Set Raspberry Pi changelog paths
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_changelog_paths:
+      - "/usr/share/doc/linux-image-{{ __cve_2026_98432_check_kernel }}/changelog.Debian.gz"
+      - "/usr/share/doc/linux-image-rpi-2712/changelog.Debian.gz"
+      - "/usr/share/doc/linux-image-rpi-v8/changelog.Debian.gz"
+      - "/usr/share/doc/linux-image-rpi-v7l/changelog.Debian.gz"
+      - "/usr/share/doc/linux-image-rpi-v7/changelog.Debian.gz"
+      - "/usr/share/doc/linux-image-rpi-v6/changelog.Debian.gz"
+      - "/usr/share/doc/raspberrypi-kernel/changelog.Debian.gz"
+  when: __cve_2026_98432_check_os_id == 'raspberrypi'
+
 - name: Role cve_2026_98432_check | Stat kernel changelogs
   ansible.builtin.stat:
     path: "{{ __cve_2026_98432_check_path }}"
@@ -173,7 +195,7 @@
     loop_var: __cve_2026_98432_check_path
     label: "{{ __cve_2026_98432_check_path }}"
   register: __cve_2026_98432_check_changelog_stats
-  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu', 'proxmox']
+  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu', 'proxmox', 'raspberrypi']
 
 # zgrep is the read-only way to search a gzipped Debian changelog.
 - name: Role cve_2026_98432_check | Search kernel changelogs for the fix
@@ -192,14 +214,14 @@
   failed_when: false
   check_mode: false
   when:
-    - __cve_2026_98432_check_os_id in ['debian', 'ubuntu', 'proxmox']
+    - __cve_2026_98432_check_os_id in ['debian', 'ubuntu', 'proxmox', 'raspberrypi']
     - __cve_2026_98432_check_stat['stat'] is defined
     - __cve_2026_98432_check_stat['stat']['exists'] | bool
 
 - name: Role cve_2026_98432_check | Record the Debian or Proxmox changelog result
   ansible.builtin.set_fact:
     __cve_2026_98432_check_deb_changelog: "{{ __cve_2026_98432_check_zgrep['results'] | default([]) | mrjoshuap.ezcve.zgrep_summary }}"
-  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu', 'proxmox']
+  when: __cve_2026_98432_check_os_id in ['debian', 'ubuntu', 'proxmox', 'raspberrypi']
 
 - name: Role cve_2026_98432_check | Record changelog evidence
   ansible.builtin.set_fact:

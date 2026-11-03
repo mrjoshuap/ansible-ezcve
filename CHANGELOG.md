@@ -3,6 +3,7 @@
 ## 1.0.1-dev
 
 - Classify `*-pve` kernels against PSA-2026-00080-1. Fixed in `proxmox-kernel-7.0.14-25-pve`.
+- Classify Raspberry Pi OS and Raspbian kernels against upstream `6.18.56`, `6.12.113`, and `6.1.190`. Apt `6.18.50` is vulnerable. `rpi-update` `6.18.59` is fixed.
 - Release development version for 1.0.1.
 - Document the collection as a series of CVE audit roles. CVE-2026-98432 is the first.
 - Add a browser-only dashboard that reads per-host JSON reports in the tab.

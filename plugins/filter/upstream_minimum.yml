@@ -1,0 +1,39 @@
+---
+DOCUMENTATION:
+  name: upstream_minimum
+  version_added: "1.0.1"
+  short_description: return the same-branch upstream floor for a kernel
+  description:
+    - Find the fixed stable in O(fixed_versions) with the same major and minor as O(_input).
+    - Return that floor and a C(prefix) of C(major.minor.) so reboot detection stays on one branch.
+    - A kernel that is 7.3 or newer returns V(7.3) when no same-branch row exists.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input, fixed_versions
+  options:
+    _input:
+      description: Running kernel release.
+      type: str
+      required: true
+    fixed_versions:
+      description: Upstream versions that contain the fix, such as V(6.18.56).
+      type: list
+      elements: str
+      required: true
+
+EXAMPLES: |
+  {{ "6.18.50+rpt-rpi-v8" | mrjoshuap.ezcve.upstream_minimum(["6.18.56", "6.12.113"]) }}
+
+RETURN:
+  _value:
+    description: Floor used for reboot detection.
+    type: dict
+    contains:
+      minimum:
+        description: Same-branch fixed version, or an empty string.
+        type: str
+      prefix:
+        description: C(major.minor.) prefix for installed versions on that branch.
+        type: str

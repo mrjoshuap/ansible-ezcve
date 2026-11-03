@@ -175,6 +175,54 @@
     - __cve_2026_98432_check_pve_running | default('') | length > 0
     - __cve_2026_98432_check_pve_minimum | default('') | length > 0
 
+- name: Role cve_2026_98432_check | Select the Raspberry Pi upstream floors
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_rpi_fixed: >-
+      {{ (cve_2026_98432_check_fixed_kernels | default({})).raspberrypi | default([], true) }}
+    __cve_2026_98432_check_rpi_status:
+      state: unknown
+      detail: ""
+    __cve_2026_98432_check_rpi_floor:
+      minimum: ""
+      prefix: ""
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id == 'raspberrypi'
+
+- name: Role cve_2026_98432_check | Classify the Raspberry Pi kernel
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_rpi_status: >-
+      {{
+        __cve_2026_98432_check_kernel
+        | mrjoshuap.ezcve.upstream_status(__cve_2026_98432_check_rpi_fixed)
+      }}
+    __cve_2026_98432_check_rpi_floor: >-
+      {{
+        __cve_2026_98432_check_kernel
+        | mrjoshuap.ezcve.upstream_minimum(__cve_2026_98432_check_rpi_fixed)
+      }}
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id == 'raspberrypi'
+    - __cve_2026_98432_check_rpi_fixed is not string
+    - __cve_2026_98432_check_rpi_fixed | length > 0
+
+- name: Role cve_2026_98432_check | Record the Raspberry Pi kernel status
+  ansible.builtin.set_fact:
+    __cve_2026_98432_check_kernel_status: "{{ __cve_2026_98432_check_rpi_status['state'] }}"
+    __cve_2026_98432_check_detection_method: upstream
+    __cve_2026_98432_check_detection_detail: "{{ __cve_2026_98432_check_rpi_status['detail'] }}"
+    __cve_2026_98432_check_minimum: "{{ __cve_2026_98432_check_rpi_floor['minimum'] }}"
+    __cve_2026_98432_check_version_kind: deb
+    __cve_2026_98432_check_version_prefix: "{{ __cve_2026_98432_check_rpi_floor['prefix'] }}"
+    __cve_2026_98432_check_running_version: "{{ __cve_2026_98432_check_kernel | mrjoshuap.ezcve.rpi_version }}"
+    __cve_2026_98432_check_installed_versions: "{{ __cve_2026_98432_check_installed_deb_versions }}"
+    __cve_2026_98432_check_decided: true
+  when:
+    - not __cve_2026_98432_check_decided | bool
+    - __cve_2026_98432_check_os_id == 'raspberrypi'
+    - __cve_2026_98432_check_rpi_status['state'] in ['fixed', 'vulnerable', 'not_affected']
+
 - name: Role cve_2026_98432_check | Compare Fedora and non-EL kernels to upstream
   ansible.builtin.set_fact:
     __cve_2026_98432_check_kernel_status: "{{ __cve_2026_98432_check_upstream['state'] }}"

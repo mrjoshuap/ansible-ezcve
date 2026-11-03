@@ -229,6 +229,83 @@
         risk: medium
         status: vulnerable
         method: version
+      - name: Raspberry Pi apt kernel 6.18.50 is vulnerable
+        os_id: raspberrypi
+        os_version: "13"
+        kernel: 6.18.50+rpt-rpi-v8
+        risk: medium
+        status: vulnerable
+        method: upstream
+      - name: Raspberry Pi rpi-update kernel 6.18.59 is fixed
+        os_id: raspberrypi
+        os_version: "13"
+        kernel: 6.18.59+rpt-rpi-v8
+        risk: low
+        status: fixed
+        method: upstream
+      - name: Raspberry Pi classic -v8+ kernel at 6.1.190 is fixed
+        os_id: raspberrypi
+        os_version: "12"
+        kernel: 6.1.190-v8+
+        risk: low
+        status: fixed
+        method: upstream
+      - name: Raspberry Pi 6.12 kernel at the floor is fixed
+        os_id: raspberrypi
+        os_version: "12"
+        kernel: 6.12.113+rpt-rpi-2712
+        risk: low
+        status: fixed
+        method: upstream
+      - name: Raspberry Pi 6.12 kernel below the floor is vulnerable
+        os_id: raspberrypi
+        os_version: "12"
+        kernel: 6.12.100+rpt-rpi-2712
+        risk: medium
+        status: vulnerable
+        method: upstream
+      - name: Raspberry Pi 6.1 kernel below the floor is vulnerable
+        os_id: raspberrypi
+        os_version: "11"
+        kernel: 6.1.21-v7+
+        risk: medium
+        status: vulnerable
+        method: upstream
+      - name: Raspberry Pi changelog hit beats an older kernel
+        os_id: raspberrypi
+        os_version: "13"
+        kernel: 6.18.50+rpt-rpi-v8
+        changelog_hit: true
+        changelog_source: /usr/share/doc/linux-image-rpi-v8/changelog.Debian.gz
+        risk: low
+        status: fixed
+        method: changelog
+      - name: installed Raspberry Pi kernel on the same branch needs a reboot
+        os_id: raspberrypi
+        os_version: "13"
+        kernel: 6.18.50+rpt-rpi-v8
+        installed_versions:
+          - 6.18.59
+          - 6.18.50
+        installed_deb_versions:
+          - 6.18.59
+          - 6.18.50
+        reboot: true
+        risk: medium
+        status: vulnerable
+        method: upstream
+      - name: a fixed Raspberry Pi kernel on another branch does not set reboot
+        os_id: raspberrypi
+        os_version: "13"
+        kernel: 6.18.50+rpt-rpi-v8
+        installed_versions:
+          - 6.12.113
+        installed_deb_versions:
+          - 6.12.113
+        reboot: false
+        risk: medium
+        status: vulnerable
+        method: upstream
 
   tasks:
     - name: Role cve_2026_98432_check | Evaluate fixture {{ __cve_2026_98432_check_case.name }}

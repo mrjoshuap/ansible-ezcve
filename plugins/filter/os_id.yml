@@ -4,8 +4,9 @@ DOCUMENTATION:
   version_added: "1.0.0"
   short_description: normalize a distribution to a supported family
   description:
-    - Return V(redhat), V(fedora), V(debian), V(ubuntu), V(proxmox), or V(unsupported).
+    - Return V(redhat), V(fedora), V(debian), V(ubuntu), V(proxmox), V(raspberrypi), or V(unsupported).
     - A kernel release ending in C(-pve) is V(proxmox) even when the distribution name is Debian.
+    - A Raspberry Pi kernel (C(+rpt), C(-rpi-), or C(-v8+)) or a Raspbian distribution name is V(raspberrypi).
     - Ubuntu is matched by distribution name. Other Red Hat family distributions use O(os_family).
   author:
     - mrjoshuap
@@ -22,7 +23,10 @@ DOCUMENTATION:
       type: str
       required: true
     kernel:
-      description: Running kernel release. Optional. A C(-pve) suffix selects V(proxmox).
+      description:
+        - Running kernel release. Optional.
+        - A C(-pve) suffix selects V(proxmox).
+        - A Raspberry Pi release selects V(raspberrypi).
       type: str
       required: false
 
@@ -30,6 +34,8 @@ EXAMPLES: |
   {{ "Ubuntu" | mrjoshuap.ezcve.os_id("Debian") }}
   {{ "Rocky" | mrjoshuap.ezcve.os_id("RedHat") }}
   {{ "Debian" | mrjoshuap.ezcve.os_id("Debian", "7.0.14-25-pve") }}
+  {{ "Debian" | mrjoshuap.ezcve.os_id("Debian", "6.18.50+rpt-rpi-v8") }}
+  {{ "Raspbian" | mrjoshuap.ezcve.os_id("Debian", "6.18.59") }}
 
 RETURN:
   _value:

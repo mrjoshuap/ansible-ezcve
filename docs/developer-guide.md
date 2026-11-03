@@ -89,8 +89,8 @@ molecule test -s default
 python3 scripts/release_version.py --self-test
 ```
 
-`tests/version_logic.yml` covers Rocky/RHEL, Debian, Ubuntu, Fedora, and
-Proxmox decisions without those kernels being installed. `molecule/default` runs the
+`tests/version_logic.yml` covers Rocky/RHEL, Debian, Ubuntu, Fedora, Proxmox,
+and Raspberry Pi decisions without those kernels being installed. `molecule/default` runs the
 role on localhost. The lint workflow runs the same checks on every push.
 
 ## Documentation site

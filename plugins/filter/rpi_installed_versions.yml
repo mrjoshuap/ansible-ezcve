@@ -1,0 +1,29 @@
+---
+DOCUMENTATION:
+  name: rpi_installed_versions
+  version_added: "1.0.1"
+  short_description: return upstream triples of installed Raspberry Pi kernels
+  description:
+    - Return one C(major.minor.patch) for each installed Raspberry Pi kernel image.
+    - Matches C(linux-image-rpi-*), C(linux-image-*+rpt*), and C(raspberrypi-kernel) when the version contains that triple.
+    - Skip helper packages and Debian C(linux-image-*-arm64) packages.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+    - O(_input) is the mapping produced by C(package_facts).
+  positional: _input
+  options:
+    _input:
+      description: C(ansible_facts['packages']).
+      type: dict
+      required: true
+
+EXAMPLES: |
+  {{ ansible_facts["packages"] | mrjoshuap.ezcve.rpi_installed_versions }}
+
+RETURN:
+  _value:
+    description: Installed Raspberry Pi kernel triples.
+    type: list
+    elements: str

@@ -24,19 +24,28 @@ def _text(value: Any) -> str:
     return str(value)
 
 
+_RPI_KERNEL = re.compile(r"(?:\+rpt\b|-rpt\b|-rpi-|-(?:v6|v7l|v7|v8)\+?$)")
+_RPI_NAMES = {"Raspbian", "Raspberry Pi OS", "RaspiOS"}
+
+
 def cve_2026_98432_check_os_id(
     distribution: str,
     os_family: str,
     kernel: str = "",
 ) -> str:
-    """Normalize a distribution to redhat, fedora, debian, ubuntu, proxmox, or unsupported.
+    """Normalize a distribution to a supported family.
 
     A running release that ends in ``-pve`` is a Proxmox kernel even when
-    ``/etc/os-release`` still says Debian.
+    ``/etc/os-release`` still says Debian. A Raspberry Pi kernel
+    (``+rpt``, ``-rpi-``, or ``-v8+``) or a Raspbian distribution name is
+    ``raspberrypi``.
     """
-    if _text(kernel).endswith("-pve"):
+    release = _text(kernel)
+    if release.endswith("-pve"):
         return "proxmox"
     name = _text(distribution)
+    if _RPI_KERNEL.search(release) or name in _RPI_NAMES:
+        return "raspberrypi"
     family = _text(os_family)
     if name == "Ubuntu":
         return "ubuntu"
@@ -358,6 +367,27 @@ def cve_2026_98432_check_upstream_status(
     }
 
 
+def cve_2026_98432_check_upstream_minimum(
+    kernel: str,
+    fixed_versions: list[Any],
+) -> dict[str, str]:
+    """Return the same-branch floor and prefix for reboot detection."""
+    parsed = _parse_upstream(kernel)
+    if parsed is None:
+        return {"minimum": "", "prefix": ""}
+    major, minor, patch = parsed
+    for raw in fixed_versions or []:
+        version = _parse_upstream(_text(raw))
+        if version and (version[0], version[1]) == (major, minor):
+            return {
+                "minimum": f"{version[0]}.{version[1]}.{version[2]}",
+                "prefix": f"{major}.{minor}.",
+            }
+    if (major, minor, patch) >= (7, 3, 0):
+        return {"minimum": "7.3", "prefix": f"{major}.{minor}."}
+    return {"minimum": "", "prefix": ""}
+
+
 def cve_2026_98432_check_notice(status: str) -> str:
     """Return the operator notice for a kernel status."""
     if status == "fixed":
@@ -554,6 +584,46 @@ def cve_2026_98432_check_zgrep_summary(results: list[dict[str, Any]]) -> dict[st
     return {"checked": checked, "hit": hit, "source": source}
 
 
+def cve_2026_98432_check_rpi_version(kernel: str) -> str:
+    """Return ``major.minor.patch`` from a Raspberry Pi kernel release."""
+    parsed = _parse_upstream(kernel)
+    if parsed is None:
+        return ""
+    return f"{parsed[0]}.{parsed[1]}.{parsed[2]}"
+
+
+_RPI_PACKAGE = re.compile(
+    r"^(?:linux-image-rpi-.+|linux-image-.+(?:\+rpt|-rpi-|-(?:v6|v7l|v7|v8)\+?)(?:$|-.+)|raspberrypi-kernel)$"
+)
+_UPSTREAM_TRIPLE = re.compile(r"(?<![\d])(\d+\.\d+\.\d+)(?![\d])")
+
+
+def cve_2026_98432_check_rpi_installed_versions(packages: dict[str, Any]) -> list[str]:
+    """Return upstream triples of installed Raspberry Pi kernel images."""
+    found: list[str] = []
+    seen: set[str] = set()
+    if not isinstance(packages, dict):
+        return found
+    for name, entries in packages.items():
+        package = _text(name)
+        if _RPI_PACKAGE.match(package) is None:
+            continue
+        candidates = [package]
+        for entry in entries or []:
+            if isinstance(entry, dict) and entry.get("version"):
+                candidates.insert(0, _text(entry["version"]))
+        triple = ""
+        for candidate in candidates:
+            match = _UPSTREAM_TRIPLE.search(candidate)
+            if match:
+                triple = match.group(1)
+                break
+        if triple and triple not in seen:
+            seen.add(triple)
+            found.append(triple)
+    return found
+
+
 def cve_2026_98432_check_pve_version(kernel: str) -> str:
     """Return the Proxmox ABI from ``uname -r``, without the ``-pve`` suffix."""
     text = _text(kernel)
@@ -744,6 +814,9 @@ class FilterModule:
             "kernel_flavor": cve_2026_98432_check_kernel_flavor,
             "deb_rule": cve_2026_98432_check_deb_rule,
             "upstream_status": cve_2026_98432_check_upstream_status,
+            "upstream_minimum": cve_2026_98432_check_upstream_minimum,
+            "rpi_version": cve_2026_98432_check_rpi_version,
+            "rpi_installed_versions": cve_2026_98432_check_rpi_installed_versions,
             "notice": cve_2026_98432_check_notice,
             "firewall_choice": cve_2026_98432_check_firewall_choice,
             "kernel_fixed": cve_2026_98432_check_kernel_fixed,
