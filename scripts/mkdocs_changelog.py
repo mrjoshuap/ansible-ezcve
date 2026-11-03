@@ -16,6 +16,21 @@ def on_pre_build(config) -> None:
     dest.write_text(text)
 
 
+def on_nav(nav, config, files):
+    """Link the static dashboard without rendering it as a Markdown page."""
+    from mkdocs.structure.nav import Link
+
+    link = Link("Dashboard", "dashboard.html")
+    items = nav.items
+    for index, item in enumerate(items):
+        file = getattr(item, "file", None)
+        if file is not None and file.src_path == "developer-guide.md":
+            items.insert(index, link)
+            return nav
+    items.append(link)
+    return nav
+
+
 def on_page_context(context, page, config, nav):
     """Send the changelog edit button to CHANGELOG.md in the repository."""
     if page.file.src_path == "changelog.md":

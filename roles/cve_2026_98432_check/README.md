@@ -2,7 +2,7 @@
 
 Read-only audit for CVE-2026-98432 (Linux IPv4 TCP use-after-free).
 Fix status, variables, mitigation, and reports are in the
-[user guide](https://mrjoshuap.github.io/ansible-ezcve/user-guide/).
+[CVE-2026-98432 page](https://mrjoshuap.github.io/ansible-ezcve/cves/cve-2026-98432/).
 
 ## Example
 

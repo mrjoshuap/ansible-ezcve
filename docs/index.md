@@ -1,16 +1,16 @@
 # mrjoshuap.ezcve
 
-Read-only Ansible audit for
-[CVE-2026-98432](https://www.cve.org/)
-(Linux IPv4 TCP use-after-free in `inet_opt` / `ireq_opt`).
-The role supports RHEL-family 8, 9, and 10, Fedora, Debian, and Ubuntu.
-A default run changes nothing.
+Ansible roles that audit Linux hosts for individual CVEs. A role may apply a
+limited mitigation. That switch stays off unless you set it.
+[CVE-2026-98432](cves/cve-2026-98432.md) is the first role.
 
 - [Source](https://github.com/mrjoshuap/ansible-ezcve)
 - [Galaxy](https://galaxy.ansible.com/ui/repo/published/mrjoshuap/ezcve/)
 - [Changelog](changelog.md)
 - [Issues](https://github.com/mrjoshuap/ansible-ezcve/issues)
 - [User guide](user-guide.md)
+- [CVEs](cves/index.md)
+- [Dashboard](dashboard.html)
 - [Developer guide](developer-guide.md)
 
 ## Current releases

@@ -5,7 +5,7 @@ version: 1.0.1
 readme: README.md
 authors:
   - mrjoshuap <mrjoshuap@home.mrjoshuap.com>
-description: Read-only audit for CVE-2026-98432 (Linux IPv4 TCP use-after-free).
+description: Audit roles for individual CVEs, with optional limited mitigation.
 license:
   - MIT
 tags:

@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mrjoshuap.ezcve dashboard</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f1ea;
+      --surface: #fffdf8;
+      --ink: #1c1915;
+      --muted: #5c564c;
+      --line: #d9d0c3;
+      --accent: #1f4d3a;
+      --accent-ink: #f4f1ea;
+      --high: #8d1d1d;
+      --medium: #8a4b08;
+      --low: #1d5c32;
+      --unknown: #3e4c59;
+      --focus: #1f4d3a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #171512;
+        --surface: #221f1b;
+        --ink: #f4f1ea;
+        --muted: #c2b8aa;
+        --line: #3c362e;
+        --accent: #8fcead;
+        --accent-ink: #14241c;
+        --high: #ffb4b4;
+        --medium: #ffcf96;
+        --low: #9ddeb6;
+        --unknown: #d5dde6;
+        --focus: #8fcead;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.5 "Segoe UI", system-ui, sans-serif;
+    }
+    main { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    h1, h2 { line-height: 1.2; }
+    h1 { margin: 0 0 0.5rem; font-size: 1.8rem; }
+    h2 { margin: 0 0 0.75rem; font-size: 1.25rem; }
+    a { color: var(--accent); }
+    a:focus-visible, button:focus-visible, label.button:focus-within, input:focus-visible, summary:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+    .privacy, .card, .drop {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 0.6rem;
+    }
+    .privacy { padding: 0.9rem 1rem; margin: 1rem 0 1.5rem; }
+    section { margin: 0 0 1.5rem; }
+    pre {
+      overflow: auto;
+      padding: 0.9rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 0.6rem;
+    }
+    code { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: 0.92em; }
+    .drop { padding: 1rem; }
+    .drop.drag { outline: 3px solid var(--focus); }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.8rem; }
+    label.button, button {
+      display: inline-block;
+      position: relative;
+      margin: 0;
+      padding: 0.45rem 0.8rem;
+      border: 1px solid var(--accent);
+      border-radius: 0.4rem;
+      background: var(--accent);
+      color: var(--accent-ink);
+      font: inherit;
+      cursor: pointer;
+    }
+    button.secondary { background: transparent; color: var(--ink); }
+    label.button input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    #status { min-height: 1.5rem; color: var(--muted); }
+    #errors { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+    #errors li { color: var(--high); }
+    .counts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.8rem; }
+    .chip {
+      padding: 0.2rem 0.55rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+    }
+    .chip.high { color: var(--high); }
+    .chip.medium { color: var(--medium); }
+    .chip.low { color: var(--low); }
+    .chip.unknown { color: var(--unknown); }
+    .filter { display: block; margin: 0 0 0.8rem; }
+    .filter input {
+      display: block;
+      width: min(24rem, 100%);
+      margin-top: 0.25rem;
+      padding: 0.4rem 0.55rem;
+      border: 1px solid var(--line);
+      border-radius: 0.4rem;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+    }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 0.6rem; }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); }
+    th, td { padding: 0.45rem 0.6rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { font-size: 0.85rem; color: var(--muted); }
+    .risk {
+      display: inline-block;
+      padding: 0.05rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 650;
+    }
+    .risk.high { color: var(--high); }
+    .risk.medium { color: var(--medium); }
+    .risk.low { color: var(--low); }
+    .risk.unknown { color: var(--unknown); }
+    details pre { margin: 0.4rem 0 0; white-space: pre-wrap; }
+    .empty { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>CVE report dashboard</h1>
+    <p class="privacy">These files stay in this browser tab. Nothing is sent to GitHub Pages or any other server. Closing the tab, or choosing Clear, drops them. A report can include process names from the host.</p>
+
+    <section>
+      <h2>Create the JSON files</h2>
+      <p>Run a role with its report directory set. For CVE-2026-98432:</p>
+      <pre><code>- name: Audit hosts for CVE-2026-98432
+  hosts: all
+  gather_facts: true
+  become: true
+  roles:
+    - role: mrjoshuap.ezcve.cve_2026_98432_check
+      vars:
+        cve_2026_98432_check_report_dir: ./cve-reports</code></pre>
+      <p>The role writes one <code>&lt;inventory_hostname&gt;.json</code> file per host on the controller. Each file is that host's summary object. Another role uses <code>&lt;role&gt;_report_dir</code> the same way and should use its own directory, so a later run does not overwrite the same hostname. Choose the JSON files or that folder below. CSV files are ignored. An array of summary objects in one file is accepted too.</p>
+      <p>Guides: <a href="https://mrjoshuap.github.io/ansible-ezcve/user-guide/">user guide</a>, <a href="https://mrjoshuap.github.io/ansible-ezcve/cves/">CVEs</a>.</p>
+    </section>
+
+    <section>
+      <h2>Load reports</h2>
+      <div id="drop" class="drop">
+        <p>Drop JSON files or a report folder here, or choose them with the buttons. The page reads the files with FileReader and does not submit a form.</p>
+        <div class="actions">
+          <label class="button">Choose JSON files
+            <input id="file-input" type="file" accept=".json,application/json" multiple>
+          </label>
+          <label class="button">Choose a report folder
+            <input id="folder-input" type="file" accept=".json,application/json" webkitdirectory directory multiple>
+          </label>
+          <button type="button" id="clear" class="secondary">Clear</button>
+        </div>
+      </div>
+      <p id="status" aria-live="polite">No reports loaded in this tab.</p>
+      <ul id="errors"></ul>
+    </section>
+
+    <section id="results" hidden>
+      <h2>Results</h2>
+      <div id="counts" class="counts"></div>
+      <label class="filter">Filter hosts
+        <input id="filter" type="search" autocomplete="off">
+      </label>
+      <div class="table-wrap">
+        <table>
+          <caption class="empty">Hosts loaded in this tab</caption>
+          <thead>
+            <tr>
+              <th>Host</th>
+              <th>CVE</th>
+              <th>Risk</th>
+              <th>Kernel status</th>
+              <th>OS</th>
+              <th>Kernel</th>
+              <th>Reboot</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <noscript>
+    <p>The viewer needs JavaScript. There is still no upload: this page has no form.</p>
+  </noscript>
+  <script>
+    (function () {
+      var records = [];
+      var errors = [];
+      var replaced = 0;
+      var skipped = 0;
+      var loadedFiles = 0;
+      var COLUMN_KEYS = {
+        host: true,
+        cve: true,
+        risk: true,
+        kernel_status: true,
+        os_id: true,
+        os_version: true,
+        kernel: true,
+        reboot_required: true
+      };
+      var RISK_ORDER = { high: 0, medium: 1, unknown: 2, low: 3 };
+
+      var drop = document.getElementById("drop");
+      var fileInput = document.getElementById("file-input");
+      var folderInput = document.getElementById("folder-input");
+      var clearButton = document.getElementById("clear");
+      var statusNode = document.getElementById("status");
+      var errorsNode = document.getElementById("errors");
+      var results = document.getElementById("results");
+      var counts = document.getElementById("counts");
+      var filterInput = document.getElementById("filter");
+      var rows = document.getElementById("rows");
+      var dragDepth = 0;
+
+      function el(tag, className, text) {
+        var node = document.createElement(tag);
+        if (className) {
+          node.className = className;
+        }
+        if (text !== undefined) {
+          node.textContent = text;
+        }
+        return node;
+      }
+
+      function scalar(value) {
+        if (value === null || value === undefined) {
+          return "";
+        }
+        if (typeof value === "string") {
+          return value.trim();
+        }
+        if (typeof value === "number" || typeof value === "boolean") {
+          return String(value);
+        }
+        return "";
+      }
+
+      function normalizeRisk(value) {
+        var risk = scalar(value).toLowerCase();
+        if (Object.prototype.hasOwnProperty.call(RISK_ORDER, risk)) {
+          return risk;
+        }
+        return "unknown";
+      }
+
+      function hostOf(row, fallback) {
+        return scalar(row.host) || fallback;
+      }
+
+      function cveOf(row) {
+        return scalar(row.cve) || "unknown";
+      }
+
+      function fileLabel(file) {
+        return file.webkitRelativePath || file.name;
+      }
+
+      function stem(name) {
+        return String(name || "host").replace(/\.json$/i, "");
+      }
+
+      function isJson(file) {
+        return /\.json$/i.test(file.name);
+      }
+
+      function readText(file) {
+        return new Promise(function (resolve, reject) {
+          var reader = new FileReader();
+          reader.onload = function () {
+            resolve(String(reader.result || ""));
+          };
+          reader.onerror = function () {
+            reject(reader.error || new Error("read failed"));
+          };
+          reader.readAsText(file);
+        });
+      }
+
+      function addRecord(source, fallbackHost, row) {
+        var key = cveOf(row) + "\n" + hostOf(row, fallbackHost);
+        var entry = { key: key, file: source, data: row };
+        for (var index = 0; index < records.length; index += 1) {
+          if (records[index].key === key) {
+            records[index] = entry;
+            replaced += 1;
+            return;
+          }
+        }
+        records.push(entry);
+      }
+
+      function parseText(source, fallbackName, text) {
+        var parsed;
+        try {
+          parsed = JSON.parse(text);
+        } catch (error) {
+          errors.push({ file: source, message: "Invalid JSON" });
+          return;
+        }
+        if (Array.isArray(parsed)) {
+          if (!parsed.length) {
+            errors.push({ file: source, message: "JSON array is empty" });
+            return;
+          }
+          parsed.forEach(function (item, index) {
+            if (!item || typeof item !== "object" || Array.isArray(item)) {
+              errors.push({ file: source, message: "Item " + index + " is not an object" });
+              return;
+            }
+            addRecord(source, stem(fallbackName) + " #" + (index + 1), item);
+          });
+          return;
+        }
+        if (!parsed || typeof parsed !== "object") {
+          errors.push({ file: source, message: "JSON must be an object or an array of objects" });
+          return;
+        }
+        addRecord(source, stem(fallbackName), parsed);
+      }
+
+      function readEntries(reader) {
+        return new Promise(function (resolve, reject) {
+          var all = [];
+          function next() {
+            reader.readEntries(function (batch) {
+              if (!batch.length) {
+                resolve(all);
+                return;
+              }
+              all = all.concat(Array.prototype.slice.call(batch));
+              next();
+            }, reject);
+          }
+          next();
+        });
+      }
+
+      function filesFromEntry(entry) {
+        if (!entry) {
+          return Promise.resolve([]);
+        }
+        if (entry.isFile) {
+          return new Promise(function (resolve, reject) {
+            entry.file(function (file) {
+              resolve([file]);
+            }, reject);
+          });
+        }
+        if (entry.isDirectory) {
+          return readEntries(entry.createReader()).then(function (entries) {
+            return Promise.all(entries.map(filesFromEntry)).then(function (groups) {
+              return groups.reduce(function (all, group) {
+                return all.concat(group);
+              }, []);
+            });
+          });
+        }
+        return Promise.resolve([]);
+      }
+
+      function collectDropped(dataTransfer) {
+        var items = dataTransfer && dataTransfer.items ? Array.prototype.slice.call(dataTransfer.items) : [];
+        var entries = [];
+        items.forEach(function (item) {
+          if (item.webkitGetAsEntry) {
+            var entry = item.webkitGetAsEntry();
+            if (entry) {
+              entries.push(entry);
+            }
+          }
+        });
+        if (!entries.length) {
+          return Promise.resolve(Array.prototype.slice.call((dataTransfer && dataTransfer.files) || []));
+        }
+        return Promise.all(entries.map(filesFromEntry)).then(function (groups) {
+          return groups.reduce(function (all, group) {
+            return all.concat(group);
+          }, []);
+        });
+      }
+
+      function loadFiles(fileList) {
+        var all = Array.prototype.slice.call(fileList || []);
+        var jsonFiles = all.filter(isJson);
+        errors = [];
+        replaced = 0;
+        skipped = all.length - jsonFiles.length;
+        loadedFiles = jsonFiles.length;
+        var chain = Promise.resolve();
+        jsonFiles.forEach(function (file) {
+          chain = chain.then(function () {
+            return readText(file).then(function (text) {
+              parseText(fileLabel(file), file.name, text);
+            }, function () {
+              errors.push({ file: fileLabel(file), message: "Could not read the file" });
+            });
+          });
+        });
+        return chain.then(render);
+      }
+
+      function osText(row) {
+        var parts = [scalar(row.os_id), scalar(row.os_version)].filter(Boolean);
+        return parts.join(" ") || "—";
+      }
+
+      function rebootText(value) {
+        if (value === true || value === "true") {
+          return "yes";
+        }
+        if (value === false || value === "false") {
+          return "no";
+        }
+        return scalar(value) || "—";
+      }
+
+      function haystack(entry) {
+        var parts = [entry.file];
+        Object.keys(entry.data).forEach(function (key) {
+          var value = entry.data[key];
+          if (value !== null && typeof value === "object") {
+            parts.push(JSON.stringify(value));
+          } else {
+            parts.push(scalar(value));
+          }
+        });
+        return parts.join(" ").toLowerCase();
+      }
+
+      function sortedRecords() {
+        return records.slice().sort(function (left, right) {
+          var risk = riskRank(left) - riskRank(right);
+          if (risk) {
+            return risk;
+          }
+          var host = hostOf(left.data, stem(left.file)).localeCompare(hostOf(right.data, stem(right.file)));
+          if (host) {
+            return host;
+          }
+          return cveOf(left.data).localeCompare(cveOf(right.data));
+        });
+      }
+
+      function riskRank(entry) {
+        return RISK_ORDER[normalizeRisk(entry.data.risk)];
+      }
+
+      function visibleRecords() {
+        var query = filterInput.value.trim().toLowerCase();
+        return sortedRecords().filter(function (entry) {
+          return !query || haystack(entry).indexOf(query) !== -1;
+        });
+      }
+
+      function renderCounts() {
+        var tally = { high: 0, medium: 0, low: 0, unknown: 0 };
+        var byCve = {};
+        records.forEach(function (entry) {
+          var risk = normalizeRisk(entry.data.risk);
+          tally[risk] += 1;
+          var cve = cveOf(entry.data);
+          byCve[cve] = (byCve[cve] || 0) + 1;
+        });
+        counts.textContent = "";
+        counts.appendChild(el("span", "chip", records.length + (records.length === 1 ? " host" : " hosts")));
+        ["high", "medium", "low", "unknown"].forEach(function (risk) {
+          counts.appendChild(el("span", "chip " + risk, tally[risk] + " " + risk));
+        });
+        Object.keys(byCve).sort().forEach(function (cve) {
+          counts.appendChild(el("span", "chip", cve + " " + byCve[cve]));
+        });
+      }
+
+      function extraText(value) {
+        if (value !== null && typeof value === "object") {
+          return JSON.stringify(value, null, 2);
+        }
+        if (value === null || value === undefined) {
+          return "null";
+        }
+        return String(value);
+      }
+
+      function renderRows(visible) {
+        rows.textContent = "";
+        if (!visible.length) {
+          var empty = document.createElement("tr");
+          var cell = el("td", "empty", records.length ? "No hosts match the filter." : "No reports loaded in this tab.");
+          cell.colSpan = 8;
+          empty.appendChild(cell);
+          rows.appendChild(empty);
+          return;
+        }
+        visible.forEach(function (entry) {
+          var row = entry.data;
+          var tr = document.createElement("tr");
+          [
+            hostOf(row, stem(entry.file)),
+            cveOf(row),
+            null,
+            scalar(row.kernel_status) || "—",
+            osText(row),
+            scalar(row.kernel) || "—",
+            rebootText(row.reboot_required)
+          ].forEach(function (value, index) {
+            var cell = document.createElement("td");
+            if (index === 2) {
+              var risk = normalizeRisk(row.risk);
+              cell.appendChild(el("span", "risk " + risk, risk));
+            } else {
+              cell.textContent = value;
+            }
+            tr.appendChild(cell);
+          });
+          var detailCell = document.createElement("td");
+          var details = document.createElement("details");
+          details.appendChild(el("summary", "", "Show"));
+          var list = document.createElement("dl");
+          var fileTerm = el("dt", "", "Loaded from");
+          var fileValue = el("dd", "", entry.file);
+          list.appendChild(fileTerm);
+          list.appendChild(fileValue);
+          Object.keys(row).forEach(function (key) {
+            if (COLUMN_KEYS[key]) {
+              return;
+            }
+            list.appendChild(el("dt", "", key));
+            var dd = document.createElement("dd");
+            var value = row[key];
+            if (value !== null && typeof value === "object") {
+              dd.appendChild(el("pre", "", extraText(value)));
+            } else {
+              dd.textContent = extraText(value);
+            }
+            list.appendChild(dd);
+          });
+          details.appendChild(list);
+          detailCell.appendChild(details);
+          tr.appendChild(detailCell);
+          rows.appendChild(tr);
+        });
+      }
+
+      function render() {
+        var visible = visibleRecords();
+        errorsNode.textContent = "";
+        errors.forEach(function (error) {
+          errorsNode.appendChild(el("li", "", error.file + ": " + error.message));
+        });
+        if (!records.length && !errors.length && !loadedFiles && !skipped) {
+          statusNode.textContent = "No reports loaded in this tab.";
+          results.hidden = true;
+          rows.textContent = "";
+          counts.textContent = "";
+          return;
+        }
+        var message = [];
+        if (!loadedFiles && skipped) {
+          message.push("No JSON files in that selection.");
+        } else if (loadedFiles) {
+          message.push("Read " + loadedFiles + (loadedFiles === 1 ? " JSON file." : " JSON files."));
+        }
+        message.push(records.length + (records.length === 1 ? " host is in this tab." : " hosts are in this tab."));
+        if (skipped) {
+          message.push("Skipped " + skipped + (skipped === 1 ? " file that is not JSON." : " files that are not JSON."));
+        }
+        if (replaced) {
+          message.push(replaced + (replaced === 1 ? " report replaced an earlier file for the same CVE and host." : " reports replaced an earlier file for the same CVE and host."));
+        }
+        if (filterInput.value.trim() && records.length) {
+          message.push("Showing " + visible.length + " of " + records.length + ".");
+        }
+        statusNode.textContent = message.join(" ");
+        results.hidden = false;
+        renderCounts();
+        renderRows(visible);
+      }
+
+      fileInput.addEventListener("change", function () {
+        loadFiles(fileInput.files).then(function () {
+          fileInput.value = "";
+        });
+      });
+      folderInput.addEventListener("change", function () {
+        loadFiles(folderInput.files).then(function () {
+          folderInput.value = "";
+        });
+      });
+      clearButton.addEventListener("click", function () {
+        records = [];
+        errors = [];
+        replaced = 0;
+        skipped = 0;
+        loadedFiles = 0;
+        fileInput.value = "";
+        folderInput.value = "";
+        filterInput.value = "";
+        render();
+      });
+      filterInput.addEventListener("input", render);
+      drop.addEventListener("dragenter", function (event) {
+        event.preventDefault();
+        dragDepth += 1;
+        drop.classList.add("drag");
+      });
+      drop.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        if (event.dataTransfer) {
+          event.dataTransfer.dropEffect = "copy";
+        }
+      });
+      drop.addEventListener("dragleave", function () {
+        dragDepth -= 1;
+        if (dragDepth <= 0) {
+          dragDepth = 0;
+          drop.classList.remove("drag");
+        }
+      });
+      drop.addEventListener("drop", function (event) {
+        event.preventDefault();
+        dragDepth = 0;
+        drop.classList.remove("drag");
+        collectDropped(event.dataTransfer).then(loadFiles);
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -3,6 +3,8 @@
 ## 1.0.1-dev
 
 - Release development version for 1.0.1.
+- Document the collection as a series of CVE audit roles. CVE-2026-98432 is the first.
+- Add a browser-only dashboard that reads per-host JSON reports in the tab.
 
 ## 1.0.0
 

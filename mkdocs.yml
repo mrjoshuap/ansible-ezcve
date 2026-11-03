@@ -1,7 +1,7 @@
 ---
 site_name: mrjoshuap.ezcve
 site_url: https://mrjoshuap.github.io/ansible-ezcve/
-site_description: Read-only Ansible audit for CVE-2026-98432.
+site_description: Ansible roles that audit individual CVEs, with optional limited mitigation.
 repo_url: https://github.com/mrjoshuap/ansible-ezcve
 repo_name: mrjoshuap/ansible-ezcve
 edit_uri: edit/main/docs/
@@ -11,9 +11,14 @@ theme:
   features:
     - navigation.tracking
     - content.action.edit
+# Dashboard is a static file. scripts/mkdocs_changelog.py inserts the nav
+# link so MkDocs does not render dashboard.html as a Markdown page.
 nav:
   - Home: index.md
   - User guide: user-guide.md
+  - CVEs:
+      - Overview: cves/index.md
+      - CVE-2026-98432: cves/cve-2026-98432.md
   - Developer guide: developer-guide.md
   - Changelog: changelog.md
 extra_javascript:

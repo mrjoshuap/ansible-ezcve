@@ -1,7 +1,8 @@
 # Developer guide
 
-How to run this checkout, cut a Galaxy release, and publish this site.
-Day-to-day use of the role is in the [user guide](user-guide.md).
+How to run this checkout, add a CVE role, cut a Galaxy release, and publish
+this site. Day-to-day use of the roles is in the [user guide](user-guide.md).
+Each CVE has a page under [CVEs](cves/index.md).
 
 ## Local checkout
 
@@ -20,6 +21,18 @@ ansible-playbook playbooks/cve_2026_98432_check.yml
 `scripts/link-collection.sh` symlinks the repository to
 `ansible_collections/mrjoshuap/ezcve` under `.ansible/collections` and, when
 `ANSIBLE_COLLECTIONS_PATH` is set, under the first entry of that path.
+
+## Add a CVE
+
+Each CVE is one role. Copy the shape of `cve_2026_98432_check`. Leave
+mitigation off unless that role implements a limited workaround.
+
+1. Add `roles/cve_<year>_<id>_check/` with defaults, validation, and tasks. The role name is the variable prefix.
+2. Add a thin playbook `playbooks/cve_<year>_<id>_check.yml` that calls the role.
+3. Add `docs/cves/cve-<year>-<id>.md` with the fix status, variables, and limitations for that CVE.
+4. Add that page under `CVEs` in `mkdocs.yml`.
+5. Add a row on [the CVE overview](cves/index.md) and in the role list in `README.md`.
+6. When `<role>_report_dir` is set, write one JSON object per host. Include `cve`, `host`, and `risk`. The [dashboard](dashboard.html) lists those keys with no change to `docs/dashboard.html`. `kernel_status`, `os_id`, `os_version`, `kernel`, and `reboot_required` fill the table when the role provides them. Any other keys open in the row.
 
 ## Releases
 
@@ -86,7 +99,10 @@ This site is [MkDocs Material](https://squidfunk.github.io/mkdocs-material/).
 Source pages live in `docs/`. `scripts/mkdocs_changelog.py` copies
 [`CHANGELOG.md`](https://github.com/mrjoshuap/ansible-ezcve/blob/main/CHANGELOG.md)
 to the changelog page at build time so the site and the repository share one
-changelog. The landing page reads the public GitHub Releases API for the
+changelog. The same hook inserts the Dashboard nav item. `docs/dashboard.html`
+is copied as a static file and is not rendered as Markdown, so that page can
+read report JSON in the browser. A Markdown nav entry would wrap it in the
+theme. The landing page reads the public GitHub Releases API for the
 current stable release and the current development prerelease. `galaxy.yml`
 `version:` is the next release, so the site does not display that field as
 the installed version.
