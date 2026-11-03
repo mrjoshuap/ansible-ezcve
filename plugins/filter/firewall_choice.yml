@@ -1,0 +1,41 @@
+---
+DOCUMENTATION:
+  name: firewall_choice
+  version_added: "1.0.0"
+  short_description: choose nftables or iptables from stat results
+  description:
+    - Pick a packet-filter backend from O(_input) and the stat results in O(stat_results).
+    - V(auto) prefers C(nft) when that binary exists, otherwise C(iptables).
+    - A requested backend whose binary is missing returns V(none).
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input, stat_results
+  options:
+    _input:
+      description: Requested backend. One of V(auto), V(nftables), V(iptables), or V(none).
+      type: str
+      required: true
+    stat_results:
+      description:
+        - Registered results from a C(stat) loop.
+        - Each item may set C(__cve_2026_98432_check_bin) to the binary path.
+      type: list
+      elements: dict
+      required: true
+
+EXAMPLES: |
+  {{ "auto" | mrjoshuap.ezcve.firewall_choice(stat_results) }}
+
+RETURN:
+  _value:
+    description: Selected backend and command path.
+    type: dict
+    contains:
+      backend:
+        description: One of V(nftables), V(iptables), or V(none).
+        type: str
+      command:
+        description: Absolute path of the selected binary, or an empty string.
+        type: str

@@ -1,0 +1,49 @@
+---
+DOCUMENTATION:
+  name: reboot_required
+  version_added: "1.0.0"
+  short_description: test whether a fixed package is installed but not running
+  description:
+    - Return V(true) when O(running) is older than O(minimum) and some installed version is at least O(minimum).
+    - O(kind) V(rpm) uses RPM order. Any other kind uses Debian order.
+    - O(prefix) limits the installed versions that are compared.
+    - An empty minimum, running version, or installed list returns V(false).
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input, running, minimum, kind, prefix
+  options:
+    _input:
+      description: Installed version strings.
+      type: list
+      elements: str
+      required: true
+    running:
+      description: Version string of the running kernel or package.
+      type: str
+      required: true
+    minimum:
+      description: Minimum fixed version.
+      type: str
+      required: true
+    kind:
+      description: V(rpm) or V(deb).
+      type: str
+      required: true
+      choices:
+        - rpm
+        - deb
+    prefix:
+      description: Compare only installed versions that start with this prefix.
+      type: str
+      required: false
+      default: ""
+
+EXAMPLES: |
+  {{ installed | mrjoshuap.ezcve.reboot_required(running, minimum, "rpm") }}
+
+RETURN:
+  _value:
+    description: Whether a reboot is required to run an installed fix.
+    type: bool

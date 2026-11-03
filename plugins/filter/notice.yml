@@ -1,0 +1,25 @@
+---
+DOCUMENTATION:
+  name: notice
+  version_added: "1.0.0"
+  short_description: return the operator notice for a kernel status
+  description:
+    - Return the sentence the role prints for V(fixed), V(not_affected), V(vulnerable), or any other status.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input
+  options:
+    _input:
+      description: Kernel status word.
+      type: str
+      required: true
+
+EXAMPLES: |
+  {{ "vulnerable" | mrjoshuap.ezcve.notice }}
+
+RETURN:
+  _value:
+    description: Operator notice for O(_input).
+    type: str

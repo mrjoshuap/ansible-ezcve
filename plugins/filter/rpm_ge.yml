@@ -1,0 +1,30 @@
+---
+DOCUMENTATION:
+  name: rpm_ge
+  version_added: "1.0.0"
+  short_description: compare two RPM versions
+  description:
+    - Return V(true) when O(_input) is greater than or equal to O(minimum).
+    - Comparison follows C(rpmvercmp). An empty string compares as V(false).
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input, minimum
+  options:
+    _input:
+      description: Running version-release string.
+      type: str
+      required: true
+    minimum:
+      description: Minimum fixed version-release string.
+      type: str
+      required: true
+
+EXAMPLES: |
+  {{ "4.18.0-553.182.1.el8_10" | mrjoshuap.ezcve.rpm_ge("4.18.0-553.100.1.el8_10") }}
+
+RETURN:
+  _value:
+    description: Whether O(_input) is at least O(minimum).
+    type: bool

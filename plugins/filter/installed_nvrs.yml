@@ -1,0 +1,33 @@
+---
+DOCUMENTATION:
+  name: installed_nvrs
+  version_added: "1.0.0"
+  short_description: return installed RPM version-release strings
+  description:
+    - Return C(version-release) for each installed package named in O(names).
+    - Entries without both version and release are skipped.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+    - O(_input) is the mapping produced by C(package_facts).
+  positional: _input, names
+  options:
+    _input:
+      description: C(ansible_facts['packages']).
+      type: dict
+      required: true
+    names:
+      description: RPM package names to read.
+      type: list
+      elements: str
+      required: true
+
+EXAMPLES: |
+  {{ ansible_facts["packages"] | mrjoshuap.ezcve.installed_nvrs(["kernel-core", "kernel"]) }}
+
+RETURN:
+  _value:
+    description: Installed version-release strings.
+    type: list
+    elements: str

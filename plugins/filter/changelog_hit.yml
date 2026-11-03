@@ -1,0 +1,31 @@
+---
+DOCUMENTATION:
+  name: changelog_hit
+  version_added: "1.0.0"
+  short_description: test whether changelog text matches a pattern
+  description:
+    - Return V(true) when O(pattern) matches O(_input).
+    - An empty text or an empty pattern returns V(false).
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+    - O(pattern) is a Python regular expression.
+  positional: _input, pattern
+  options:
+    _input:
+      description: Changelog text.
+      type: str
+      required: true
+    pattern:
+      description: Regular expression searched in O(_input).
+      type: str
+      required: true
+
+EXAMPLES: |
+  {{ changelog_text | mrjoshuap.ezcve.changelog_hit("CVE-2026-98432") }}
+
+RETURN:
+  _value:
+    description: Whether the pattern matched.
+    type: bool

@@ -3,8 +3,12 @@ argument_specs:
   main:
     short_description: Audit a host for CVE-2026-98432.
     description:
-      - Collect running-kernel, MPTCP, and fix facts.
-      - Do not change the host unless cve_2026_98432_check_apply_mitigation is true.
+      - Collect running-kernel, MPTCP, and fix facts for CVE-2026-98432.
+      - The default run changes nothing.
+      - Set cve_2026_98432_check_apply_mitigation to true to persist the sysctl mitigation.
+    version_added: "1.0.0"
+    author:
+      - mrjoshuap
     options:
       cve_2026_98432_check_apply_mitigation:
         type: bool
@@ -50,26 +54,32 @@ argument_specs:
       cve_2026_98432_check_changelog_pattern:
         type: str
         required: false
+        default: 'CVE-2026-98432|free inet_opt and ireq_opt'
         description:
           - Regular expression searched in the running kernel changelog.
+          - A match marks the running kernel fixed.
       cve_2026_98432_check_upstream_fixed:
         type: list
         required: false
         elements: str
         description:
           - Upstream stable versions that contain the fix.
+          - The shipped list is in defaults/main.yml. Replacing this drops versions you omit.
       cve_2026_98432_check_fixed_kernels:
         type: dict
         required: false
         description:
-          - Distro minimum fixed versions. Replacing this drops keys you omit.
+          - Distro minimum fixed versions.
+          - The shipped mapping is in defaults/main.yml. Replacing this drops keys you omit.
       cve_2026_98432_check_fixed_kernels_rt:
         type: dict
         required: false
         description:
           - Real-time kernel minimums, keyed like fixed_kernels.redhat.
+          - The shipped mapping is in defaults/main.yml.
       cve_2026_98432_check_unfixed_releases:
         type: dict
         required: false
         description:
           - Distro releases that have no published fix.
+          - The shipped mapping is in defaults/main.yml.

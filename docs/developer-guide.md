@@ -5,8 +5,10 @@ Day-to-day use of the role is in the [user guide](user-guide.md).
 
 ## Local checkout
 
-Filters are `mrjoshuap.ezcve.*` in `plugins/filter/`. AAP does not load
-`filter_plugins/` from a collection role.
+Filters are `mrjoshuap.ezcve.*`. The implementations share
+`plugins/filter/cve_2026_98432_check.py`. Galaxy and `ansible-doc -t filter`
+read `plugins/filter/<filter>.yml`, one sidecar per filter name. AAP does not
+load `filter_plugins/` from a collection role. There are no modules.
 
 Point Ansible at this checkout, then run the thin playbook:
 

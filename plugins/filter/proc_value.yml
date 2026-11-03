@@ -1,0 +1,26 @@
+---
+DOCUMENTATION:
+  name: proc_value
+  version_added: "1.0.0"
+  short_description: decode a slurp of a procfs sysctl
+  description:
+    - Decode the base64 C(content) of a C(slurp) result and strip whitespace.
+    - Return V(missing) when the result failed, has no content, or cannot be decoded.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input
+  options:
+    _input:
+      description: Registered result of a procfs C(slurp).
+      type: dict
+      required: true
+
+EXAMPLES: |
+  {{ slurp_result | mrjoshuap.ezcve.proc_value }}
+
+RETURN:
+  _value:
+    description: Sysctl text, or V(missing).
+    type: str

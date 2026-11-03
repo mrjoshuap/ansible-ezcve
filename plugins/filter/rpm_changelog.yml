@@ -1,0 +1,45 @@
+---
+DOCUMENTATION:
+  name: rpm_changelog
+  version_added: "1.0.0"
+  short_description: use the first successful RPM changelog query
+  description:
+    - Prefer a successful C(kernel-core) changelog query.
+    - Fall back to the C(kernel) query.
+    - A skipped or failed query is ignored. When neither query succeeds, C(checked) is V(false).
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input, kernel_result, pattern
+  options:
+    _input:
+      description: Registered result of C(rpm -q --changelog kernel-core).
+      type: dict
+      required: true
+    kernel_result:
+      description: Registered result of C(rpm -q --changelog kernel).
+      type: dict
+      required: true
+    pattern:
+      description: Regular expression searched in the changelog text.
+      type: str
+      required: true
+
+EXAMPLES: |
+  {{ core_result | mrjoshuap.ezcve.rpm_changelog(kernel_result, pattern) }}
+
+RETURN:
+  _value:
+    description: Changelog search result.
+    type: dict
+    contains:
+      checked:
+        description: Whether a query returned changelog text.
+        type: bool
+      hit:
+        description: Whether that text matched O(pattern).
+        type: bool
+      source:
+        description: C(rpm changelog kernel-core), C(rpm changelog kernel), or an empty string.
+        type: str

@@ -3,6 +3,10 @@
 RPM comparison follows ``rpmvercmp`` (hyphen and dot are separators). Debian
 comparison follows dpkg ``verrevcmp``. Both run on the controller so the role
 does not need the rpm or apt Python modules on the target.
+
+Galaxy and ``ansible-doc -t filter`` read one sidecar per filter name,
+``plugins/filter/<name>.yml``. This file's name is not a filter name, so it
+has no DOCUMENTATION string of its own.
 """
 
 from __future__ import annotations

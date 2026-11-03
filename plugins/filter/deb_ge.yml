@@ -1,0 +1,31 @@
+---
+DOCUMENTATION:
+  name: deb_ge
+  version_added: "1.0.0"
+  short_description: compare two Debian package versions
+  description:
+    - Return V(true) when O(_input) is greater than or equal to O(minimum).
+    - Comparison follows dpkg epoch, upstream version, and revision order.
+    - An empty string compares as V(false).
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input, minimum
+  options:
+    _input:
+      description: Running Debian or Ubuntu package version.
+      type: str
+      required: true
+    minimum:
+      description: Minimum fixed package version.
+      type: str
+      required: true
+
+EXAMPLES: |
+  {{ "6.1.190-1" | mrjoshuap.ezcve.deb_ge("6.1.164-1") }}
+
+RETURN:
+  _value:
+    description: Whether O(_input) is at least O(minimum).
+    type: bool

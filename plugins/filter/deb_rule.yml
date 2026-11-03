@@ -1,0 +1,55 @@
+---
+DOCUMENTATION:
+  name: deb_rule
+  version_added: "1.0.0"
+  short_description: select a Debian or Ubuntu fixed-version rule
+  description:
+    - Return the first rule whose package-version prefix matches O(_input).
+    - A rule with O(flavor) matches only that kernel flavor. A missing flavor matches any kernel.
+    - The flavor defaults to V(generic) when O(kernel) has no flavor suffix.
+    - An empty package version or a release with no rules returns an empty dictionary.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input, kernel, os_version, rules_by_release
+  options:
+    _input:
+      description: Installed package version of the running kernel.
+      type: str
+      required: true
+    kernel:
+      description: Running kernel release used to choose the flavor.
+      type: str
+      required: true
+    os_version:
+      description: Distribution version used to select the rule list.
+      type: str
+      required: true
+    rules_by_release:
+      description:
+        - Mapping of distribution version to a list of rule dictionaries.
+        - Each rule may contain C(prefix), C(minimum), C(flavor), and C(pocket).
+      type: dict
+      required: true
+
+EXAMPLES: |
+  {{ package_version | mrjoshuap.ezcve.deb_rule(kernel, os_version, rules_by_release) }}
+
+RETURN:
+  _value:
+    description: Matching rule, or an empty dictionary.
+    type: dict
+    contains:
+      prefix:
+        description: Package version prefix that selected this rule.
+        type: str
+      minimum:
+        description: Minimum package version that contains the fix.
+        type: str
+      flavor:
+        description: Kernel flavor this rule applies to.
+        type: str
+      pocket:
+        description: Archive pocket recorded for this minimum.
+        type: str

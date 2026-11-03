@@ -1,0 +1,27 @@
+---
+DOCUMENTATION:
+  name: kernel_fixed
+  version_added: "1.0.0"
+  short_description: map a kernel status to true, false, or null
+  description:
+    - Return V(true) for V(fixed) and V(not_affected).
+    - Return V(false) for V(vulnerable).
+    - Return V(null) for any other status, including V(unknown).
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input
+  options:
+    _input:
+      description: Kernel status word.
+      type: str
+      required: true
+
+EXAMPLES: |
+  {{ "fixed" | mrjoshuap.ezcve.kernel_fixed }}
+
+RETURN:
+  _value:
+    description: V(true), V(false), or V(null).
+    type: raw

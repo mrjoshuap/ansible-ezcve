@@ -1,0 +1,38 @@
+---
+DOCUMENTATION:
+  name: zgrep_summary
+  version_added: "1.0.0"
+  short_description: summarize a loop of zgrep count results
+  description:
+    - Read registered C(zgrep -c) results.
+    - A numeric stdout and a return code of V(0) or V(1) counts as checked.
+    - A count greater than zero is a hit. The source path comes from C(__cve_2026_98432_check_path) on the loop item stat.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input
+  options:
+    _input:
+      description: Registered C(results) list from a C(zgrep -c) loop.
+      type: list
+      elements: dict
+      required: true
+
+EXAMPLES: |
+  {{ zgrep_results | mrjoshuap.ezcve.zgrep_summary }}
+
+RETURN:
+  _value:
+    description: Combined changelog search result.
+    type: dict
+    contains:
+      checked:
+        description: Whether at least one file was searched.
+        type: bool
+      hit:
+        description: Whether any file matched.
+        type: bool
+      source:
+        description: Path of the matching file, or the last searched path.
+        type: str

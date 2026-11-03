@@ -1,0 +1,31 @@
+---
+DOCUMENTATION:
+  name: deb_package_version
+  version_added: "1.0.0"
+  short_description: return the package version of the running Debian or Ubuntu kernel
+  description:
+    - Look up C(linux-image-<kernel>), then C(linux-image-unsigned-<kernel>), then C(linux-modules-<kernel>).
+    - Return the first C(version) found, or an empty string.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+    - O(_input) is the mapping produced by C(package_facts).
+  positional: _input, kernel
+  options:
+    _input:
+      description: C(ansible_facts['packages']).
+      type: dict
+      required: true
+    kernel:
+      description: Running kernel release.
+      type: str
+      required: true
+
+EXAMPLES: |
+  {{ ansible_facts["packages"] | mrjoshuap.ezcve.deb_package_version(ansible_facts["kernel"]) }}
+
+RETURN:
+  _value:
+    description: Package version, or an empty string.
+    type: str

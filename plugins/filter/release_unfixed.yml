@@ -1,0 +1,34 @@
+---
+DOCUMENTATION:
+  name: release_unfixed
+  version_added: "1.0.0"
+  short_description: test whether a distro release has no published fix
+  description:
+    - Return V(true) when O(os_version) equals a listed release or starts with that release plus a dot.
+    - An unknown family or a non-list entry returns V(false).
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input, os_version, unfixed
+  options:
+    _input:
+      description: Normalized family, such as V(ubuntu).
+      type: str
+      required: true
+    os_version:
+      description: Distribution version, such as V(20.04).
+      type: str
+      required: true
+    unfixed:
+      description: Mapping of family name to a list of release strings.
+      type: dict
+      required: true
+
+EXAMPLES: |
+  {{ "ubuntu" | mrjoshuap.ezcve.release_unfixed("20.04", {"ubuntu": ["20.04"]}) }}
+
+RETURN:
+  _value:
+    description: Whether this release is listed as unfixed.
+    type: bool

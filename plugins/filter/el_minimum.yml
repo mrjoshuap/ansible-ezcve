@@ -1,0 +1,41 @@
+---
+DOCUMENTATION:
+  name: el_minimum
+  version_added: "1.0.0"
+  short_description: select the EL fixed-kernel minimum
+  description:
+    - Return the minimum NVR for this running kernel, or an empty string.
+    - Kernels whose release contains C(.rt) use O(rt_map). Other EL kernels use O(fixed_map).
+    - The lookup key is O(os_version) when its major matches the kernel C(.elN) major, otherwise the C(.elN) major.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+    - A kernel without C(.elN) returns an empty string.
+  positional: _input, os_version, fixed_map, rt_map
+  options:
+    _input:
+      description: Running kernel release, such as V(5.14.0-687.64.1.el9_8).
+      type: str
+      required: true
+    os_version:
+      description: Distribution version, such as V(9.8).
+      type: str
+      required: true
+    fixed_map:
+      description: Non-RT minimums keyed by distribution version.
+      type: dict
+      required: true
+    rt_map:
+      description: Real-time minimums keyed like O(fixed_map).
+      type: dict
+      required: false
+      default: {}
+
+EXAMPLES: |
+  {{ kernel | mrjoshuap.ezcve.el_minimum(os_version, fixed_map, rt_map) }}
+
+RETURN:
+  _value:
+    description: Minimum NVR, or an empty string when no rule applies.
+    type: str

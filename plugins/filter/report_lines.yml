@@ -1,0 +1,27 @@
+---
+DOCUMENTATION:
+  name: report_lines
+  version_added: "1.0.0"
+  short_description: build the per-host text summary
+  description:
+    - Return one line per summary field, listener, and note.
+    - A value that is not a dictionary returns a single missing-summary line.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input
+  options:
+    _input:
+      description: C(cve_2026_98432_check_summary) mapping.
+      type: dict
+      required: true
+
+EXAMPLES: |
+  {{ cve_2026_98432_check_summary | mrjoshuap.ezcve.report_lines }}
+
+RETURN:
+  _value:
+    description: Text lines for the host summary.
+    type: list
+    elements: str

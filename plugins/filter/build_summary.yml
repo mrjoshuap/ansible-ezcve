@@ -1,0 +1,34 @@
+---
+DOCUMENTATION:
+  name: build_summary
+  version_added: "1.0.0"
+  short_description: add kernel_fixed and notice to a summary mapping
+  description:
+    - Copy O(_input) and set C(kernel_fixed) from C(kernel_status).
+    - Set C(notice) from that same status.
+    - C(kernel_fixed) stays V(null) when the status is unknown.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input
+  options:
+    _input:
+      description: Summary fields. C(kernel_status) selects the added values.
+      type: dict
+      required: true
+
+EXAMPLES: |
+  {{ summary_fields | mrjoshuap.ezcve.build_summary }}
+
+RETURN:
+  _value:
+    description: O(_input) plus C(kernel_fixed) and C(notice).
+    type: dict
+    contains:
+      kernel_fixed:
+        description: V(true), V(false), or V(null).
+        type: raw
+      notice:
+        description: Operator notice for C(kernel_status).
+        type: str

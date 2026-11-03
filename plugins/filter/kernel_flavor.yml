@@ -1,0 +1,26 @@
+---
+DOCUMENTATION:
+  name: kernel_flavor
+  version_added: "1.0.0"
+  short_description: return the Ubuntu kernel flavor suffix
+  description:
+    - Return the trailing flavor, such as V(generic) or V(aws).
+    - An empty string means the release has no non-numeric flavor suffix.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input
+  options:
+    _input:
+      description: Running kernel release, such as V(6.8.0-149-generic).
+      type: str
+      required: true
+
+EXAMPLES: |
+  {{ "6.8.0-149-generic" | mrjoshuap.ezcve.kernel_flavor }}
+
+RETURN:
+  _value:
+    description: Flavor suffix, or an empty string.
+    type: str

@@ -1,0 +1,38 @@
+---
+DOCUMENTATION:
+  name: ss_mptcp
+  version_added: "1.0.0"
+  short_description: parse ss -M output into MPTCP listeners
+  description:
+    - Read a C(ss) command result and return LISTEN rows.
+    - A skipped task, a failed command, or a missing C(-M) option returns C(supported=false) and an empty listener list.
+    - Process names come from the C(users:) field when C(ss) printed them.
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input
+  options:
+    _input:
+      description: Registered result of C(ss -Mlnp).
+      type: dict
+      required: true
+
+EXAMPLES: |
+  {{ ss_result | mrjoshuap.ezcve.ss_mptcp }}
+
+RETURN:
+  _value:
+    description: Parsed MPTCP listener result.
+    type: dict
+    contains:
+      supported:
+        description: Whether C(ss -M) ran and its output could be read.
+        type: bool
+      listeners:
+        description: LISTEN rows. Each item has C(address) and C(process).
+        type: list
+        elements: dict
+      error:
+        description: Failure text, or an empty string.
+        type: str

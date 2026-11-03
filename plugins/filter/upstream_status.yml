@@ -1,0 +1,40 @@
+---
+DOCUMENTATION:
+  name: upstream_status
+  version_added: "1.0.0"
+  short_description: classify a kernel against upstream fixed stables
+  description:
+    - Compare a mainline-style kernel to O(fixed_versions).
+    - Kernels older than V(4.4) are V(not_affected).
+    - V(7.3) and newer are V(fixed). A listed stable branch is V(fixed) at or above its patch.
+    - A kernel that cannot be parsed returns V(unknown).
+  author:
+    - mrjoshuap
+  notes:
+    - This filter runs on the controller.
+  positional: _input, fixed_versions
+  options:
+    _input:
+      description: Running kernel release.
+      type: str
+      required: true
+    fixed_versions:
+      description: Upstream stable versions that contain the fix.
+      type: list
+      elements: str
+      required: true
+
+EXAMPLES: |
+  {{ "6.12.113" | mrjoshuap.ezcve.upstream_status(["6.12.113", "7.3"]) }}
+
+RETURN:
+  _value:
+    description: Classification of the running kernel.
+    type: dict
+    contains:
+      state:
+        description: One of V(fixed), V(vulnerable), V(not_affected), or V(unknown).
+        type: str
+      detail:
+        description: Sentence explaining the classification.
+        type: str
